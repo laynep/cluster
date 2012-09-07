@@ -132,19 +132,20 @@ IMPLICIT NONE
 	INTEGER :: i, j
 	INTEGER :: OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
 
-
 	!Parallelize
 
 	!$OMP PARALLEL DEFAULT(NONE) &
 	!$OMP& SHARED(setA,setB,eps,Neps)
-	!$OMP DO SCHEDULE(STATIC)
+	!$OMP DO SCHEDULE(DYNAMIC)
 
-	DO i=1,SIZE(setA,1)
+	DO i=1,SIZE(Neps)
 		Neps(i)=eps_neigh(setA(i,:),setB, eps, metric)
+print*,i,Neps(i)
 	END DO
-
 	!$OMP END DO
 	!$OMP END PARALLEL
+
+print*,"out"
 
 END FUNCTION Neps
 
