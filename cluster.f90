@@ -28,7 +28,7 @@ IMPLICIT NONE
 
 	DOUBLE PRECISION, DIMENSION(:,:), INTENT(IN) :: succ, fail
 	INTERFACE
-		FUNCTION metric(pt1,pt2)
+		pure FUNCTION metric(pt1,pt2)
 			IMPLICIT NONE
 			DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
 			DOUBLE PRECISION :: metric
@@ -42,8 +42,6 @@ IMPLICIT NONE
 	DOUBLE PRECISION :: eps
 
 	!Set the optional arguments.
-	
-
 	IF (PRESENT(dencrit)) THEN
 		density=dencrit
 	ELSE
@@ -70,7 +68,7 @@ IMPLICIT NONE
 
 	cnt=0
 	DO i=1,SIZE(succ,1)
-		IF (good(i) .EQV. .TRUE.) THEN
+		IF (good(i)) THEN
 			cnt=cnt+1
 			get_insulatedcorepts(cnt,:)=succ(i,:)
 		END IF
@@ -89,26 +87,26 @@ IMPLICIT NONE
 	DOUBLE PRECISION, INTENT(IN) :: eps
 	INTEGER, INTENT(IN) :: dencrit
 	INTERFACE
-		FUNCTION metric(pt1,pt2)
+		pure FUNCTION metric(pt1,pt2)
 			IMPLICIT NONE
 			DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
 			DOUBLE PRECISION :: metric
 		END FUNCTION metric
 	END INTERFACE
 	LOGICAL, DIMENSION(SIZE(succ,1)) :: goodpts
+!	integer, dimension(size(succ,1)) :: epsnumb_succ, epsnumb_fail
 	INTEGER, DIMENSION(:), ALLOCATABLE :: epsnumb_succ, epsnumb_fail
 	INTEGER :: i
+
+	allocate (epsnumb_succ(size(succ,1)),epsnumb_fail(size(succ,1)))
 
 	!Get number of points in eps-Neigh for each succ point wrt succ set.
 	epsnumb_succ=Neps(succ,succ,eps,metric)
 	!Get number of points in eps-Neigh for each succ point wrt fail set.
 	epsnumb_fail=Neps(succ,fail,eps,metric)
 
-	DO i=1,SIZE(goodpts)
-		!If more than critical numb of good points in eps-Neigh and zero fail points,
-		!then consider this to be a good point.
-		goodpts(i) = (epsnumb_succ(i) .ge. dencrit .AND. epsnumb_fail(i)==0)
-	END DO
+	!If more than critical numb of good points in eps-Neigh and zero fail points, then consider this to be a good point.
+	goodpts(:) = ((epsnumb_succ(:) .ge. dencrit) .AND. epsnumb_fail(:)==0)
 
 	IF (ALLOCATED(epsnumb_succ)) DEALLOCATE(epsnumb_succ)
 	IF (ALLOCATED(epsnumb_fail)) DEALLOCATE(epsnumb_fail)
@@ -124,29 +122,25 @@ IMPLICIT NONE
 	DOUBLE PRECISION, DIMENSION(:,:), INTENT(IN) :: setA, setB
 	DOUBLE PRECISION, INTENT(IN) :: eps
 	INTERFACE
-		FUNCTION metric(pt1,pt2)
+		pure FUNCTION metric(pt1,pt2)
 			IMPLICIT NONE
 			DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
 			DOUBLE PRECISION :: metric
 		END FUNCTION metric
 	END INTERFACE
-	INTEGER, DIMENSION(:), ALLOCATABLE :: Neps
-	DOUBLE PRECISION, DIMENSION(:,:), ALLOCATABLE :: pt
+	INTEGER, DIMENSION(SIZE(setA,1)) :: Neps
 	INTEGER :: i, j
 	INTEGER :: OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
 
-	ALLOCATE(Neps(SIZE(setA,1)),pt(1,SIZE(setA,2)))
 
 	!Parallelize
 
 	!$OMP PARALLEL DEFAULT(NONE) &
-	!$OMP& SHARED(setA,setB,eps,Neps)&
-	!$OMP& PRIVATE(pt) 
+	!$OMP& SHARED(setA,setB,eps,Neps)
 	!$OMP DO SCHEDULE(STATIC)
 
 	DO i=1,SIZE(setA,1)
-		pt(1,:)=setA(i,:)
-		Neps(i)=eps_neigh(pt,setB, eps, metric)
+		Neps(i)=eps_neigh(setA(i,:),setB, eps, metric)
 	END DO
 
 	!$OMP END DO
@@ -156,28 +150,29 @@ END FUNCTION Neps
 
 
 !Function to find the epsilon neighborhood of a point with respect to a set of D-dimensional points given in an NxD array (that has been *heapsorted*) and a given metric.
-INTEGER FUNCTION eps_neigh(pt, set, eps, metric)
+pure INTEGER FUNCTION eps_neigh(pt, set, eps, metric)
 IMPLICIT NONE
 
 	DOUBLE PRECISION, INTENT(IN) :: eps
 	INTERFACE
-		FUNCTION metric(pt1,pt2)
+		pure FUNCTION metric(pt1,pt2)
 			IMPLICIT NONE
 			DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
 			DOUBLE PRECISION :: metric
 		END FUNCTION metric
 	END INTERFACE
-	DOUBLE PRECISION, DIMENSION(:,:), INTENT(IN) :: set, pt
+	DOUBLE PRECISION, DIMENSION(:,:), INTENT(IN) :: set
+	double precision, dimension(:), intent(in) :: pt
 	DOUBLE PRECISION :: x
-	DOUBLE PRECISION, DIMENSION(SIZE(pt,2)) :: pt1, pt2
+	DOUBLE PRECISION, DIMENSION(SIZE(pt)) :: pt1, pt2
 	INTEGER :: i, low, high
 
-	pt1=pt(1,:)
+	pt1=pt
 
 	!Find number of points in set that are within eps in ith dimension.
-	low= location(set,pt(1,1)-eps)
+	low= location(set,pt(1)-eps)
 	IF (low==0) low=1
-	high= location(set,pt(1,1)+eps)
+	high= location(set,pt(1)+eps)
 
 	eps_neigh=0
 	DO i=low,high
@@ -198,7 +193,7 @@ END FUNCTION eps_neigh
 
 !NOTE: there is a similar subroutine in sorters_d that does this too, so this one is called "location" where that one is called "locate".
 
-INTEGER FUNCTION location(table,x)
+pure INTEGER FUNCTION location(table,x)
 IMPLICIT NONE
 
 	DOUBLE PRECISION, DIMENSION(:,:),INTENT(IN) :: table
@@ -227,7 +222,7 @@ END FUNCTION location
 !********************************************************
 !Different metrics.  Computes distance between two D-dimensional points expressed as a vector.
 
-DOUBLE PRECISION FUNCTION manhattan(pt1,pt2)
+pure DOUBLE PRECISION FUNCTION manhattan(pt1,pt2)
 IMPLICIT NONE
 
 	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
@@ -243,7 +238,7 @@ IMPLICIT NONE
 
 END FUNCTION manhattan
 
-DOUBLE PRECISION FUNCTION euclidean(pt1,pt2)
+pure DOUBLE PRECISION FUNCTION euclidean(pt1,pt2)
 IMPLICIT NONE
 
 	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
@@ -259,7 +254,7 @@ IMPLICIT NONE
 
 END FUNCTION euclidean
 
-DOUBLE PRECISION FUNCTION dist_N(pt1,pt2,N)
+pure DOUBLE PRECISION FUNCTION dist_N(pt1,pt2,N)
 IMPLICIT NONE
 
 	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2

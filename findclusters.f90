@@ -41,7 +41,7 @@ IMPLICIT NONE
 	if(allocated(success)) deallocate(success)
 	if(allocated(fail)) deallocate(fail)
 
-	stop
+	
 
 
 END PROGRAM findclusters
