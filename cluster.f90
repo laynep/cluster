@@ -23,7 +23,7 @@ CONTAINS
 
 !Function which returns all the good points.  Sizeneigh and dencrit are optional arguments that have the defaults set to unity.
 
-FUNCTION get_insulatedcorepts(succ,fail,metric,sizeneighb,dencrit)
+subroutine get_insulatedcorepts(core,succ,fail,metric,sizeneighb,dencrit)
 IMPLICIT NONE
 
 	DOUBLE PRECISION, DIMENSION(:,:), INTENT(IN) :: succ, fail
@@ -36,7 +36,7 @@ IMPLICIT NONE
 	END INTERFACE
 	DOUBLE PRECISION, INTENT(IN), OPTIONAL :: sizeneighb
 	INTEGER, INTENT(IN), OPTIONAL :: dencrit
-	DOUBLE PRECISION, DIMENSION(:,:), ALLOCATABLE :: get_insulatedcorepts
+	DOUBLE PRECISION, DIMENSION(:,:), ALLOCATABLE :: core
 	LOGICAL, DIMENSION(SIZE(succ,1)) :: good
 	INTEGER :: i, length, cnt, density
 	DOUBLE PRECISION :: eps
@@ -64,19 +64,19 @@ IMPLICIT NONE
 	!Returns number of .TRUE. elmts in good.
 	length = COUNT(good)
 	
-	ALLOCATE(get_insulatedcorepts(length,SIZE(succ,2)))
+	ALLOCATE(core(length,SIZE(succ,2)))
 
 	cnt=0
 	DO i=1,SIZE(succ,1)
 		IF (good(i)) THEN
 			cnt=cnt+1
-			get_insulatedcorepts(cnt,:)=succ(i,:)
+			core(cnt,:)=succ(i,:)
 		END IF
 	END DO
 
 !	IF (ALLOCATED(good)) DEALLOCATE(good)
 	
-END FUNCTION get_insulatedcorepts
+END subroutine get_insulatedcorepts
 
 !Functions which returns a Logical vector goodpts that has a .TRUE. for every point in succ that has 1) Neps(succ) > dencrit 2) Neps(fail)=0.
 
@@ -131,15 +131,15 @@ IMPLICIT NONE
 
 	!Parallelize
 
-	!$OMP PARALLEL DEFAULT(NONE) &
-	!$OMP& SHARED(setA,setB,eps, Neps)
-	!$OMP DO SCHEDULE(STATIC,1)
+!	!$OMP PARALLEL DEFAULT(NONE) &
+!	!$OMP& SHARED(setA,setB,eps, Neps)
+!	!$OMP DO SCHEDULE(STATIC)
 	DO i=1,SIZE(Neps)
 		Neps(i)=eps_neigh(setA(i,:),setB, eps, metric)
-print*,i,Neps(i)
+!print*,i,Neps(i)
 	END DO
-	!$OMP END DO
-	!$OMP END PARALLEL
+!	!$OMP END DO
+!	!$OMP END PARALLEL
 
 END FUNCTION Neps
 

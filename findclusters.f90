@@ -23,8 +23,8 @@ IMPLICIT NONE
 
 	!Read succ and fail sets from file.
 	if (printing) print*, "Reading files."
-	call read_succ(success, "success.bin","unformatted")
-	call read_fail(fail, "fail.bin","unformatted")
+	call read_succ(success, "totalsucc.bin","unformatted")
+	call read_fail(fail, "totalfail.bin","unformatted")
 
 	!Sort the success and fail sets by value in first column.
 	if (printing) print*, "Sorting files."
@@ -34,7 +34,7 @@ IMPLICIT NONE
 	if (printing) PRINT*,"Getting core points."
 	eps=.5D0
 	dencrit=2
-	insulatedpts=get_insulatedcorepts(success,fail,euclidean,eps,dencrit)
+	call get_insulatedcorepts(insulatedpts,success,fail,euclidean,eps,dencrit)
 
 	if (printing) then
 		PRINT*,"Printing core points."
