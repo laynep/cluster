@@ -100,10 +100,10 @@ IMPLICIT NONE
 	!Get number of points in eps-Neigh for each succ point wrt succ set.
 	epsnumb_succ=Neps(succ,succ,eps,metric)
 	!Get number of points in eps-Neigh for each succ point wrt fail set.
-!	epsnumb_fail=Neps(succ,fail,eps,metric)
+	epsnumb_fail=Neps(succ,fail,eps,metric)
 
 	!If more than critical numb of good points in eps-Neigh and zero fail points, then consider this to be a good point.
-	goodpts(:) = ((epsnumb_succ(:) .ge. dencrit) )!.AND. epsnumb_fail(:)==0)
+	goodpts(:) = ((epsnumb_succ(:) .ge. dencrit) .AND. epsnumb_fail(:)==0)
 
 
 
