@@ -37,7 +37,7 @@ IMPLICIT NONE
 	DOUBLE PRECISION, INTENT(IN), OPTIONAL :: sizeneighb
 	INTEGER, INTENT(IN), OPTIONAL :: dencrit
 	DOUBLE PRECISION, DIMENSION(:,:), ALLOCATABLE :: get_insulatedcorepts
-	LOGICAL, DIMENSION(:), ALLOCATABLE :: good
+	LOGICAL, DIMENSION(SIZE(succ,1)) :: good
 	INTEGER :: i, length, cnt, density
 	DOUBLE PRECISION :: eps
 
@@ -74,7 +74,7 @@ IMPLICIT NONE
 		END IF
 	END DO
 
-	IF (ALLOCATED(good)) DEALLOCATE(good)
+!	IF (ALLOCATED(good)) DEALLOCATE(good)
 	
 END FUNCTION get_insulatedcorepts
 
@@ -94,11 +94,8 @@ IMPLICIT NONE
 		END FUNCTION metric
 	END INTERFACE
 	LOGICAL, DIMENSION(SIZE(succ,1)) :: goodpts
-!	integer, dimension(size(succ,1)) :: epsnumb_succ, epsnumb_fail
-	INTEGER, DIMENSION(:), ALLOCATABLE :: epsnumb_succ, epsnumb_fail
+	integer, dimension(size(succ,1)) :: epsnumb_succ, epsnumb_fail
 	INTEGER :: i
-
-	allocate (epsnumb_succ(size(succ,1)),epsnumb_fail(size(succ,1)))
 
 	!Get number of points in eps-Neigh for each succ point wrt succ set.
 	epsnumb_succ=Neps(succ,succ,eps,metric)
@@ -108,14 +105,11 @@ IMPLICIT NONE
 	!If more than critical numb of good points in eps-Neigh and zero fail points, then consider this to be a good point.
 	goodpts(:) = ((epsnumb_succ(:) .ge. dencrit) .AND. epsnumb_fail(:)==0)
 
-	IF (ALLOCATED(epsnumb_succ)) DEALLOCATE(epsnumb_succ)
-	IF (ALLOCATED(epsnumb_fail)) DEALLOCATE(epsnumb_fail)
+
 
 END FUNCTION goodpts
 
-
-
-!Function which takes two sets, setA and setB, and returns the vector Neps that is the number of points in the epsilon-neighborhood of each element in setA with respect to setB.
+!TESTING Neps
 FUNCTION Neps(setA, setB, eps, metric)
 use omp_lib
 IMPLICIT NONE
@@ -131,22 +125,72 @@ IMPLICIT NONE
 	END INTERFACE
 	INTEGER, DIMENSION(SIZE(setA,1)) :: Neps
 	INTEGER :: i, j
+	integer :: low, high, xx
+	double precision, dimension(size(setA,2)) :: pt
 !	INTEGER :: OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
 
 	!Parallelize
 
 	!$OMP PARALLEL DEFAULT(NONE) &
-	!$OMP& SHARED(setA,setB,eps, Neps)
-	!$OMP DO SCHEDULE(STATIC)
+	!$OMP& SHARED(setA,setB,eps, Neps)&
+	!$OMP& PRIVATE(i,j,pt,low,high,xx)
 
+
+	!$OMP DO SCHEDULE(STATIC)
 	DO i=1,SIZE(Neps)
-		Neps(i)=eps_neigh(setA(i,:),setB, eps, metric)
+		pt(:)=setA(i,:)
+		low= location(setB,pt(1)-eps)
+		IF (low==0) low=1
+		high= location(setB,pt(1)+eps)
+
+		xx=0
+		DO j=low,high
+			if (metric(pt,setB(j,:)) .le. eps) then
+				xx=xx+1
+			END IF
+		END DO
+
+		Neps(i)=xx
 print*,i,Neps(i)
 	END DO
 	!$OMP END DO
 	!$OMP END PARALLEL
 
 END FUNCTION Neps
+
+
+
+!Function which takes two sets, setA and setB, and returns the vector Neps that is the number of points in the epsilon-neighborhood of each element in setA with respect to setB.
+FUNCTION Neps2(setA, setB, eps, metric)
+use omp_lib
+IMPLICIT NONE
+
+	DOUBLE PRECISION, DIMENSION(:,:), INTENT(IN) :: setA, setB
+	DOUBLE PRECISION, INTENT(IN) :: eps
+	INTERFACE
+		pure FUNCTION metric(pt1,pt2)
+			IMPLICIT NONE
+			DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
+			DOUBLE PRECISION :: metric
+		END FUNCTION metric
+	END INTERFACE
+	INTEGER, DIMENSION(SIZE(setA,1)) :: Neps2
+	INTEGER :: i, j
+!	INTEGER :: OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
+
+	!Parallelize
+
+!	!$OMP PARALLEL DEFAULT(NONE) &
+!	!$OMP& SHARED(setA,setB,eps, Neps2)
+!	!$OMP DO SCHEDULE(STATIC)
+	DO i=1,SIZE(Neps2)
+		Neps2(i)=eps_neigh(setA(i,:),setB, eps, metric)
+print*,i,Neps2(i)
+	END DO
+!	!$OMP END DO
+!	!$OMP END PARALLEL
+
+END FUNCTION Neps2
 
 
 !Function to find the epsilon neighborhood of a point with respect to a set of D-dimensional points given in an NxD array (that has been *heapsorted*) and a given metric.
