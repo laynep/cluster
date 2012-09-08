@@ -109,7 +109,9 @@ IMPLICIT NONE
 
 END FUNCTION goodpts
 
-!TESTING Neps
+
+
+!Function which takes two sets, setA and setB, and returns the vector Neps that is the number of points in the epsilon-neighborhood of each element in setA with respect to setB.
 FUNCTION Neps(setA, setB, eps, metric)
 use omp_lib
 IMPLICIT NONE
@@ -125,72 +127,21 @@ IMPLICIT NONE
 	END INTERFACE
 	INTEGER, DIMENSION(SIZE(setA,1)) :: Neps
 	INTEGER :: i, j
-	integer :: low, high, xx
-	double precision, dimension(size(setA,2)) :: pt
 !	INTEGER :: OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
 
 	!Parallelize
 
 	!$OMP PARALLEL DEFAULT(NONE) &
-	!$OMP& SHARED(setA,setB,eps, Neps)&
-	!$OMP& PRIVATE(i,j,pt,low,high,xx)
-
-
-	!$OMP DO SCHEDULE(STATIC)
+	!$OMP& SHARED(setA,setB,eps, Neps)
+	!$OMP DO SCHEDULE(STATIC,1)
 	DO i=1,SIZE(Neps)
-		pt(:)=setA(i,:)
-		low= location(setB,pt(1)-eps)
-		IF (low==0) low=1
-		high= location(setB,pt(1)+eps)
-
-		xx=0
-		DO j=low,high
-			if (metric(pt,setB(j,:)) .le. eps) then
-				xx=xx+1
-			END IF
-		END DO
-
-		Neps(i)=xx
+		Neps(i)=eps_neigh(setA(i,:),setB, eps, metric)
 print*,i,Neps(i)
 	END DO
 	!$OMP END DO
 	!$OMP END PARALLEL
 
 END FUNCTION Neps
-
-
-
-!Function which takes two sets, setA and setB, and returns the vector Neps that is the number of points in the epsilon-neighborhood of each element in setA with respect to setB.
-FUNCTION Neps2(setA, setB, eps, metric)
-use omp_lib
-IMPLICIT NONE
-
-	DOUBLE PRECISION, DIMENSION(:,:), INTENT(IN) :: setA, setB
-	DOUBLE PRECISION, INTENT(IN) :: eps
-	INTERFACE
-		pure FUNCTION metric(pt1,pt2)
-			IMPLICIT NONE
-			DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
-			DOUBLE PRECISION :: metric
-		END FUNCTION metric
-	END INTERFACE
-	INTEGER, DIMENSION(SIZE(setA,1)) :: Neps2
-	INTEGER :: i, j
-!	INTEGER :: OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
-
-	!Parallelize
-
-!	!$OMP PARALLEL DEFAULT(NONE) &
-!	!$OMP& SHARED(setA,setB,eps, Neps2)
-!	!$OMP DO SCHEDULE(STATIC)
-	DO i=1,SIZE(Neps2)
-		Neps2(i)=eps_neigh(setA(i,:),setB, eps, metric)
-print*,i,Neps2(i)
-	END DO
-!	!$OMP END DO
-!	!$OMP END PARALLEL
-
-END FUNCTION Neps2
 
 
 !Function to find the epsilon neighborhood of a point with respect to a set of D-dimensional points given in an NxD array (that has been *heapsorted*) and a given metric.
