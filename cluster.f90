@@ -139,7 +139,7 @@ IMPLICIT NONE
 	!$OMP DO SCHEDULE(STATIC)
 	DO i=1,SIZE(output)
 		output(i)=eps_neigh(setA(i,:),setB, eps, metric)
-print*,i,output(i)
+!print*,i,output(i)
 	END DO
 	!$OMP END DO
 	!$OMP END PARALLEL

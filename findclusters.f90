@@ -40,8 +40,8 @@ IMPLICIT NONE
 		PRINT*,"Printing core points."
 		open(unit=3,file="corepoints.bin",form='UNFORMATTED')
 		DO i=1,SIZE(insulatedpts,1)
-print*, "printing",i, (insulatedpts(i,j),j=1,SIZE(insulatedpts,2))
-!		WRITE(unit=3), (insulatedpts(i,j),j=1,SIZE(insulatedpts,2))
+!print*, "printing",i, (insulatedpts(i,j),j=1,SIZE(insulatedpts,2))
+		WRITE(unit=3), (insulatedpts(i,j),j=1,SIZE(insulatedpts,2))
 		END DO
 		CLOSE(unit=3)
 	end if
