@@ -117,6 +117,7 @@ END FUNCTION goodpts
 
 !Function which takes two sets, setA and setB, and returns the vector Neps that is the number of points in the epsilon-neighborhood of each element in setA with respect to setB.
 FUNCTION Neps(setA, setB, eps, metric)
+use omp_lib
 IMPLICIT NONE
 
 	DOUBLE PRECISION, DIMENSION(:,:), INTENT(IN) :: setA, setB
@@ -130,12 +131,12 @@ IMPLICIT NONE
 	END INTERFACE
 	INTEGER, DIMENSION(SIZE(setA,1)) :: Neps
 	INTEGER :: i, j
-	INTEGER :: OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
+!	INTEGER :: OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
 
 	!Parallelize
 
 	!$OMP PARALLEL DEFAULT(NONE) &
-	!$OMP& SHARED(setA,setB,eps,Neps)
+	!$OMP& SHARED(setA,setB,eps, Neps)
 	!$OMP DO SCHEDULE(STATIC)
 
 	DO i=1,SIZE(Neps)
@@ -144,8 +145,6 @@ print*,i,Neps(i)
 	END DO
 	!$OMP END DO
 	!$OMP END PARALLEL
-
-print*,"out"
 
 END FUNCTION Neps
 
@@ -165,10 +164,7 @@ IMPLICIT NONE
 	DOUBLE PRECISION, DIMENSION(:,:), INTENT(IN) :: set
 	double precision, dimension(:), intent(in) :: pt
 	DOUBLE PRECISION :: x
-	DOUBLE PRECISION, DIMENSION(SIZE(pt)) :: pt1, pt2
 	INTEGER :: i, low, high
-
-	pt1=pt
 
 	!Find number of points in set that are within eps in ith dimension.
 	low= location(set,pt(1)-eps)
@@ -177,11 +173,11 @@ IMPLICIT NONE
 
 	eps_neigh=0
 	DO i=low,high
-		pt2=set(i,:)
-		IF (metric(pt1,pt2) .le. eps) THEN
+		if (metric(pt,set(i,:)) .le. eps) then
 			eps_neigh=eps_neigh+1
 		END IF
 	END DO
+
 
 END FUNCTION eps_neigh
 
@@ -228,7 +224,7 @@ IMPLICIT NONE
 
 	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
 
-	manhattan=abs(sum(pt1-pt2))
+	manhattan=sum(abs(pt1-pt2))
 
 END FUNCTION manhattan
 
@@ -238,7 +234,6 @@ IMPLICIT NONE
 	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
 
 	euclidean=sqrt(sum((pt1-pt2)*(pt1-pt2)))
-
 
 END FUNCTION euclidean
 
