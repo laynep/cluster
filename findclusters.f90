@@ -19,8 +19,6 @@ IMPLICIT NONE
 	ALLOCATE(success(length_s,width_s),fail(length_f,width_f))
 
 	!Read succ and fail sets from file.
-!call read_succ(success, "success.bin","unformatted")
-!call read_fail(fail, "fail.bin","unformatted")
 	call read_succ(success, "totalsucc.bin","unformatted")
 	call read_fail(fail, "totalfail.bin","unformatted")
 
@@ -31,12 +29,8 @@ IMPLICIT NONE
 	PRINT*,"Getting core points"
 	eps=.5D0
 	dencrit=2
-	insulatedpts=get_insulatedcorepts(success,fail,euclidean,eps,dencrit)
-if(allocated(insulatedpts)) then
-	print*,size(insulatedpts,1),size(insulatedpts,2)
-else
-	print*,"insulatedpts isn't allocated??"
-end if
+	insulatedpts=get_insulatedcorepts(success,fail,manhattan,eps,dencrit)
+
 	PRINT*,"Printing core points"
 
 
@@ -45,7 +39,7 @@ end if
 print*, "printing",i, (insulatedpts(i,j),j=1,SIZE(insulatedpts,2))
 !		WRITE(unit=3), (insulatedpts(i,j),j=1,SIZE(insulatedpts,2))
 	END DO
-!	CLOSE(unit=3)
+	CLOSE(unit=3)
 
 	if(allocated(insulatedpts)) deallocate(insulatedpts)
 	if(allocated(success)) deallocate(success)

@@ -227,15 +227,8 @@ pure DOUBLE PRECISION FUNCTION manhattan(pt1,pt2)
 IMPLICIT NONE
 
 	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
-	INTEGER :: i
 
-	manhattan = 0D0
-
-	DO i=1,SIZE(pt1)
-		manhattan = manhattan + ABS(pt1(i)-pt2(i))
-	END DO
-
-	manhattan = ABS(manhattan)
+	manhattan=abs(sum(pt1-pt2))
 
 END FUNCTION manhattan
 
@@ -243,14 +236,8 @@ pure DOUBLE PRECISION FUNCTION euclidean(pt1,pt2)
 IMPLICIT NONE
 
 	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
-	INTEGER :: i
 
-	euclidean = 0D0
-	DO i=1,SIZE(pt1)
-		euclidean = euclidean + (pt1(i)-pt2(i))**2
-	END DO
-
-	euclidean = SQRT(euclidean)
+	euclidean=sqrt(sum((pt1-pt2)*(pt1-pt2)))
 
 
 END FUNCTION euclidean
@@ -260,35 +247,30 @@ IMPLICIT NONE
 
 	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
 	INTEGER, INTENT(IN) :: N
-	INTEGER :: i
 
-	dist_N=0D0	
-	DO i=1,SIZE(pt1)
-		dist_N = dist_N + (ABS(pt1(i)-pt2(i)))**N
-	END DO
+	dist_N = abs((sum((pt1-pt2)**N))**(1D0/DBLE(N)))
 
-	dist_N = (dist_N)**(1D0/DBLE(N))
 
 END FUNCTION dist_N
 
 !Pullback of the Euclidean metric onto the equal energy density constraint surface.
-DOUBLE PRECISION FUNCTION pullback_eucl(pt1,pt2)
-IMPLICIT NONE
+!DOUBLE PRECISION FUNCTION pullback_eucl(pt1,pt2)
+!IMPLICIT NONE
 
-	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
-	DOUBLE PRECISION, DIMENSION(SIZE(pt1),SIZE(pt2)) :: metric
-	DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: diff
+!	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
+!	DOUBLE PRECISION, DIMENSION(SIZE(pt1),SIZE(pt2)) :: metric
+!	DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: diff
 
-	ALLOCATE(diff(SIZE(pt1)))
-	diff=pt1-pt2
+!	ALLOCATE(diff(SIZE(pt1)))
+!	diff=pt1-pt2
 
-	metric = 0D0
+!	metric = 0D0
 
-	pullback_eucl=0D0
+!	pullback_eucl=0D0
 
 	
 
-END FUNCTION pullback_eucl
+!END FUNCTION pullback_eucl
 
 
 
