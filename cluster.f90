@@ -97,10 +97,13 @@ IMPLICIT NONE
 	integer, dimension(size(succ,1)) :: epsnumb_succ, epsnumb_fail
 	INTEGER :: i
 
+	
 	!Get number of points in eps-Neigh for each succ point wrt succ set.
-	epsnumb_succ=Neps(succ,succ,eps,metric)
+	call Neps(epsnumb_succ,succ,succ,eps,metric)
+!	epsnumb_succ=Neps(succ,succ,eps,metric)
 	!Get number of points in eps-Neigh for each succ point wrt fail set.
-	epsnumb_fail=Neps(succ,fail,eps,metric)
+	call Neps(epsnumb_fail,succ,fail,eps,metric)
+!	epsnumb_fail=Neps(succ,fail,eps,metric)
 
 	!If more than critical numb of good points in eps-Neigh and zero fail points, then consider this to be a good point.
 	goodpts(:) = ((epsnumb_succ(:) .ge. dencrit) .AND. epsnumb_fail(:)==0)
@@ -112,7 +115,7 @@ END FUNCTION goodpts
 
 
 !Function which takes two sets, setA and setB, and returns the vector Neps that is the number of points in the epsilon-neighborhood of each element in setA with respect to setB.
-FUNCTION Neps(setA, setB, eps, metric)
+subroutine Neps(output, setA, setB, eps, metric)
 use omp_lib
 IMPLICIT NONE
 
@@ -125,23 +128,23 @@ IMPLICIT NONE
 			DOUBLE PRECISION :: metric
 		END FUNCTION metric
 	END INTERFACE
-	INTEGER, DIMENSION(SIZE(setA,1)) :: Neps
+	INTEGER, DIMENSION(SIZE(setA,1)) :: output
 	INTEGER :: i, j
 !	INTEGER :: OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
 
 	!Parallelize
 
-!	!$OMP PARALLEL DEFAULT(NONE) &
-!	!$OMP& SHARED(setA,setB,eps, Neps)
-!	!$OMP DO SCHEDULE(STATIC)
-	DO i=1,SIZE(Neps)
-		Neps(i)=eps_neigh(setA(i,:),setB, eps, metric)
-!print*,i,Neps(i)
+	!$OMP PARALLEL DEFAULT(NONE) &
+	!$OMP& SHARED(setA,setB,eps, output)
+	!$OMP DO SCHEDULE(STATIC)
+	DO i=1,SIZE(output)
+		output(i)=eps_neigh(setA(i,:),setB, eps, metric)
+print*,i,output(i)
 	END DO
-!	!$OMP END DO
-!	!$OMP END PARALLEL
+	!$OMP END DO
+	!$OMP END PARALLEL
 
-END FUNCTION Neps
+END subroutine Neps
 
 
 !Function to find the epsilon neighborhood of a point with respect to a set of D-dimensional points given in an NxD array (that has been *heapsorted*) and a given metric.
