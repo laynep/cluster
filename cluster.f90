@@ -136,7 +136,7 @@ IMPLICIT NONE
 
 	!$OMP PARALLEL DEFAULT(NONE) &
 	!$OMP& SHARED(setA,setB,eps,Neps)
-	!$OMP DO SCHEDULE(DYNAMIC)
+	!$OMP DO SCHEDULE(STATIC)
 
 	DO i=1,SIZE(Neps)
 		Neps(i)=eps_neigh(setA(i,:),setB, eps, metric)
