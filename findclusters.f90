@@ -1,25 +1,23 @@
-PROGRAM findclusters
-USE fcluster
-USE sorters
-IMPLICIT NONE
+program findclusters
+use fcluster
+use sorters
+implicit none
 
-	DOUBLE PRECISION, DIMENSION(:,:), ALLOCATABLE :: success, fail
-	INTEGER :: i,j,k,check
-	INTEGER :: length_s, length_f, width_s, width_f
-	DOUBLE PRECISION, DIMENSION(:,:), ALLOCATABLE :: insulatedpts
-	DOUBLE PRECISION :: eps
-	INTEGER :: dencrit
+	double precision, dimension(:,:), allocatable :: success, fail
+	integer :: i,j,k,check
+	integer :: length_s, length_f, width_s, width_f
+	double precision, dimension(:,:), allocatable :: insulatedpts
+	double precision, dimension(:), allocatable :: eps
+	integer :: dencrit
 	logical :: printing
 
-	NAMELIST /tablel/ length_s, length_f, width_s, width_f
-
-	printing = .true.
+	namelist /tablel/ length_s, length_f, width_s, width_f, printing
 
 	!Reads file sizes from input file "setsizes.txt".
-	OPEN(unit=1000, file="setsizes.txt", status="old", delim="apostrophe")
-	READ(unit=1000, nml=tablel)
-	CLOSE(unit=1000)
-	ALLOCATE(success(length_s,width_s),fail(length_f,width_f))
+	open(unit=1000, file="setsizes.txt", status="old", delim="apostrophe")
+	read(unit=1000, nml=tablel)
+	close(unit=1000)
+	allocate(success(length_s,width_s),fail(length_f,width_f))
 
 	!Read succ and fail sets from file.
 	if (printing) print*, "Reading files."
@@ -31,28 +29,30 @@ IMPLICIT NONE
 	call heapsort(success)
 	call heapsort(fail)
 
+	!Get the core points.
 	if (printing) PRINT*,"Getting core points."
+	!Set eps in each dimn.
+	allocate(eps(size(success,2)))
 	eps=.5D0
-	dencrit=2
+	dencrit=2	!At least one other point in eps-ball.
 	call get_insulatedcorepts(insulatedpts,success,fail,euclidean,eps,dencrit)
 
+	!Print the core points.
 	if (printing) then
-		PRINT*,"Printing core points."
-		open(unit=3,file="corepoints.bin",form='UNFORMATTED')
-		DO i=1,SIZE(insulatedpts,1)
-!print*, "printing",i, (insulatedpts(i,j),j=1,SIZE(insulatedpts,2))
-		WRITE(unit=3), (insulatedpts(i,j),j=1,SIZE(insulatedpts,2))
-		END DO
-		CLOSE(unit=3)
+		print*,"Printing core points."
+		open(unit=3,file="corepoints.bin",form='unformatted')
+		do i=1,size(insulatedpts,1)
+		write(unit=3), (insulatedpts(i,j),j=1,size(insulatedpts,2))
+		end do
+		close(unit=3)
 	end if
 
+	if(allocated(eps)) deallocate(eps)
 	if(allocated(insulatedpts)) deallocate(insulatedpts)
 	if(allocated(success)) deallocate(success)
 	if(allocated(fail)) deallocate(fail)
 
-
-
-END PROGRAM findclusters
+end program findclusters
 
 
 

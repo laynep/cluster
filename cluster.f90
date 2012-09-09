@@ -24,160 +24,191 @@ CONTAINS
 !Function which returns all the good points.  Sizeneigh and dencrit are optional arguments that have the defaults set to unity.
 
 subroutine get_insulatedcorepts(core,succ,fail,metric,sizeneighb,dencrit)
-IMPLICIT NONE
+implicit none
 
-	DOUBLE PRECISION, DIMENSION(:,:), INTENT(IN) :: succ, fail
-	INTERFACE
-		pure FUNCTION metric(pt1,pt2)
-			IMPLICIT NONE
-			DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
-			DOUBLE PRECISION :: metric
-		END FUNCTION metric
-	END INTERFACE
-	DOUBLE PRECISION, INTENT(IN), OPTIONAL :: sizeneighb
-	INTEGER, INTENT(IN), OPTIONAL :: dencrit
-	DOUBLE PRECISION, DIMENSION(:,:), ALLOCATABLE :: core
-	LOGICAL, DIMENSION(SIZE(succ,1)) :: good
-	INTEGER :: i, length, cnt, density
-	DOUBLE PRECISION :: eps
+	double precision, dimension(:,:), intent(in) :: succ, fail
+	interface
+		pure function metric(pt1,pt2)
+			implicit none
+			double precision, dimension(:), intent(in) :: pt1, pt2
+			double precision :: metric
+		end function metric
+	end interface
+	double precision, dimension(:), intent(in), optional :: sizeneighb
+	integer, intent(in), optional :: dencrit
+	double precision, dimension(:,:), allocatable :: core
+	logical, dimension(size(succ,1)) :: good
+	integer :: i, length, cnt, density
+	double precision, dimension(size(succ,2)) :: eps
 
 	!Set the optional arguments.
-	IF (PRESENT(dencrit)) THEN
+	if (present(dencrit)) then
 		density=dencrit
-	ELSE
+	else
 		!Default density to having only one point in eps box.
 		density=1
-	END IF
+	end if
 
-	IF (PRESENT(sizeneighb)) THEN
+	if (present(sizeneighb)) then
 		eps = sizeneighb
-	ELSE
+	else
 		!Default size of eps set to unity
 		eps=1D0
 		!eps = ((10./DBLE(SIZE(succ,1)))**(1D0/DBLE(SIZE(succ,2))))*&
 		!&(MAXVAL(succ)-MINVAL(succ))
-	END IF
+	end if
 
 	!Returns logical vector good with .TRUE. for good points and .FALSE. for bad ones.
 	good = goodpts(succ,fail,eps,density,metric)
 
 	!Returns number of .TRUE. elmts in good.
-	length = COUNT(good)
+	length = count(good)
 	
-	ALLOCATE(core(length,SIZE(succ,2)))
+	allocate(core(length,size(succ,2)))
 
 	cnt=0
-	DO i=1,SIZE(succ,1)
-		IF (good(i)) THEN
+	do i=1,size(succ,1)
+		if (good(i)) then
 			cnt=cnt+1
 			core(cnt,:)=succ(i,:)
-		END IF
-	END DO
-
-!	IF (ALLOCATED(good)) DEALLOCATE(good)
+		end if
+	end do
 	
-END subroutine get_insulatedcorepts
+end subroutine get_insulatedcorepts
 
 !Functions which returns a Logical vector goodpts that has a .TRUE. for every point in succ that has 1) Neps(succ) > dencrit 2) Neps(fail)=0.
 
-FUNCTION goodpts(succ,fail,eps,dencrit,metric)
-IMPLICIT NONE
+function goodpts(succ,fail,eps,dencrit,metric)
+implicit none
 
-	DOUBLE PRECISION, DIMENSION(:,:), INTENT(IN) :: succ, fail
-	DOUBLE PRECISION, INTENT(IN) :: eps
-	INTEGER, INTENT(IN) :: dencrit
-	INTERFACE
-		pure FUNCTION metric(pt1,pt2)
-			IMPLICIT NONE
-			DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
-			DOUBLE PRECISION :: metric
-		END FUNCTION metric
-	END INTERFACE
-	LOGICAL, DIMENSION(SIZE(succ,1)) :: goodpts
+	double precision, dimension(:,:), intent(in) :: succ, fail
+	double precision, dimension(:), intent(in) :: eps
+	integer, intent(in) :: dencrit
+	interface
+		pure function metric(pt1,pt2)
+			implicit none
+			double precision, dimension(:), intent(in) :: pt1, pt2
+			double precision :: metric
+		end function metric
+	end interface
+	logical, dimension(size(succ,1)) :: goodpts
 	integer, dimension(size(succ,1)) :: epsnumb_succ, epsnumb_fail
-	INTEGER :: i
+	integer :: i
 
 	
 	!Get number of points in eps-Neigh for each succ point wrt succ set.
 	call Neps(epsnumb_succ,succ,succ,eps,metric)
-!	epsnumb_succ=Neps(succ,succ,eps,metric)
 	!Get number of points in eps-Neigh for each succ point wrt fail set.
 	call Neps(epsnumb_fail,succ,fail,eps,metric)
-!	epsnumb_fail=Neps(succ,fail,eps,metric)
 
 	!If more than critical numb of good points in eps-Neigh and zero fail points, then consider this to be a good point.
-	goodpts(:) = ((epsnumb_succ(:) .ge. dencrit) .AND. epsnumb_fail(:)==0)
+	goodpts(:) = ((epsnumb_succ(:) .ge. dencrit) .and. epsnumb_fail(:)==0)
 
 
 
-END FUNCTION goodpts
+end function goodpts
 
 
 
 !Function which takes two sets, setA and setB, and returns the vector Neps that is the number of points in the epsilon-neighborhood of each element in setA with respect to setB.
 subroutine Neps(output, setA, setB, eps, metric)
 use omp_lib
-IMPLICIT NONE
+implicit none
 
-	DOUBLE PRECISION, DIMENSION(:,:), INTENT(IN) :: setA, setB
-	DOUBLE PRECISION, INTENT(IN) :: eps
-	INTERFACE
-		pure FUNCTION metric(pt1,pt2)
-			IMPLICIT NONE
-			DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
-			DOUBLE PRECISION :: metric
-		END FUNCTION metric
-	END INTERFACE
-	INTEGER, DIMENSION(SIZE(setA,1)) :: output
-	INTEGER :: i, j
-!	INTEGER :: OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
+	double precision, dimension(:,:), intent(in) :: seta, setb
+	double precision, dimension(:), intent(in) :: eps
+	interface
+		pure function metric(pt1,pt2)
+			implicit none
+			double precision, dimension(:), intent(in) :: pt1, pt2
+			double precision :: metric
+		end function metric
+	end interface
+	integer, dimension(size(seta,1)) :: output
+	integer :: i, j
+!	integer :: omp_get_num_threads, omp_get_thread_num
 
 	!Parallelize
 
 	!$OMP PARALLEL DEFAULT(NONE) &
 	!$OMP& SHARED(setA,setB,eps, output)
 	!$OMP DO SCHEDULE(STATIC)
-	DO i=1,SIZE(output)
+	do i=1,SIZE(output)
 		output(i)=eps_neigh(setA(i,:),setB, eps, metric)
-!print*,i,output(i)
-	END DO
+	end do
 	!$OMP END DO
 	!$OMP END PARALLEL
 
-END subroutine Neps
+end subroutine Neps
 
 
 !Function to find the epsilon neighborhood of a point with respect to a set of D-dimensional points given in an NxD array (that has been *heapsorted*) and a given metric.
-pure INTEGER FUNCTION eps_neigh(pt, set, eps, metric)
-IMPLICIT NONE
+pure integer function eps_neigh(pt, set, eps, metric)
+implicit none
 
-	DOUBLE PRECISION, INTENT(IN) :: eps
-	INTERFACE
-		pure FUNCTION metric(pt1,pt2)
-			IMPLICIT NONE
-			DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
-			DOUBLE PRECISION :: metric
-		END FUNCTION metric
-	END INTERFACE
-	DOUBLE PRECISION, DIMENSION(:,:), INTENT(IN) :: set
+	double precision, dimension(:), intent(in) :: eps
+	interface
+		pure function metric(pt1,pt2)
+			implicit none
+			double precision, dimension(:), intent(in) :: pt1, pt2
+			double precision :: metric
+		end function metric
+	end interface
+	double precision, dimension(:,:), intent(in) :: set
 	double precision, dimension(:), intent(in) :: pt
-	DOUBLE PRECISION :: x
-	INTEGER :: i, low, high
+	double precision :: x
+	integer :: i, low, high
 
 	!Find number of points in set that are within eps in ith dimension.
-	low= location(set,pt(1)-eps)
-	IF (low==0) low=1
-	high= location(set,pt(1)+eps)
+	low= location(set,pt(1)-eps(1))
+	if (low==0) low=1
+	high= location(set,pt(1)+eps(1))
 
 	eps_neigh=0
-	DO i=low,high
-		if (metric(pt,set(i,:)) .le. eps) then
+	do i=low,high
+		if (in_box(set(i,:),pt,eps,metric)) then
 			eps_neigh=eps_neigh+1
-		END IF
-	END DO
+		end if
+	end do
 
 
-END FUNCTION eps_neigh
+end function eps_neigh
+
+
+!Function to determine whether a point "pt1" is in the "eps" box of "pt2".
+pure function in_box(pt1,pt2,eps,metric)
+implicit none
+
+	double precision, dimension(:), intent(in) :: pt1, pt2, eps
+	logical :: in_box
+	interface
+		pure function metric(pt1,pt2)
+			implicit none
+			double precision, dimension(:), intent(in) :: pt1, pt2
+			double precision :: metric
+		end function metric
+	end interface
+	double precision :: dist
+	double precision, dimension(size(pt1)) :: scale1, scale2
+	integer :: i
+
+	!Rescale the points so that eps-ball has unit radius.
+	do i=1,size(pt1)
+		scale1(i)=pt1(i)/eps(i)
+		scale2(i)=pt2(i)/eps(i)
+	end do
+	
+	!Calc distance between points.
+	dist = metric(scale1,scale2)
+
+	!Determine if in unit radius.
+	if (dist .le. 1D0) then
+		in_box=.true.
+	else
+		in_box=.false.
+	end if
+
+end function in_box
 
 
 
@@ -188,63 +219,63 @@ END FUNCTION eps_neigh
 
 !NOTE: there is a similar subroutine in sorters_d that does this too, so this one is called "location" where that one is called "locate".
 
-pure INTEGER FUNCTION location(table,x)
-IMPLICIT NONE
+pure integer function location(table,x)
+implicit none
 
-	DOUBLE PRECISION, DIMENSION(:,:),INTENT(IN) :: table
-	DOUBLE PRECISION, INTENT(IN) :: x
-	INTEGER :: jl, ju, n, jm
-	INTEGER :: i
-	INTEGER :: j
+	double precision, dimension(:,:),intent(in) :: table
+	double precision, intent(in) :: x
+	integer :: jl, ju, n, jm
+	integer :: i
+	integer :: j
 
-	n = SIZE(table,1)
+	n = size(table,1)
 
 	jl = 0
 	ju = n+1
-	DO WHILE (ju-jl>1)
+	do while (ju-jl>1)
 		jm=(ju+jl)/2
-		IF((table(n,1)> table(1,1)) .EQV. (x > table(jm,1))) THEN
+		if((table(n,1)> table(1,1)) .eqv. (x > table(jm,1))) then
 			jl = jm
-		ELSE
+		else
 			ju=jm
-		END IF
-	END DO
+		end if
+	end do
 	j = jl
 	location = j
 
-END FUNCTION location
+end function location
 
 !********************************************************
 !Different metrics.  Computes distance between two D-dimensional points expressed as a vector.
 
-pure DOUBLE PRECISION FUNCTION manhattan(pt1,pt2)
-IMPLICIT NONE
+pure double precision function manhattan(pt1,pt2)
+implicit none
 
-	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
+	double precision, dimension(:), intent(in) :: pt1, pt2
 
 	manhattan=sum(abs(pt1-pt2))
 
-END FUNCTION manhattan
+end function manhattan
 
-pure DOUBLE PRECISION FUNCTION euclidean(pt1,pt2)
-IMPLICIT NONE
+pure double precision function euclidean(pt1,pt2)
+implicit none
 
-	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
+	double precision, dimension(:), intent(in) :: pt1, pt2
 
 	euclidean=sqrt(sum((pt1-pt2)*(pt1-pt2)))
 
-END FUNCTION euclidean
+end function euclidean
 
-pure DOUBLE PRECISION FUNCTION dist_N(pt1,pt2,N)
-IMPLICIT NONE
+pure double precision function dist_n(pt1,pt2,n)
+implicit none
 
-	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
-	INTEGER, INTENT(IN) :: N
+	double precision, dimension(:), intent(in) :: pt1, pt2
+	integer, intent(in) :: n
 
-	dist_N = abs((sum((pt1-pt2)**N))**(1D0/DBLE(N)))
+	dist_n = (sum(abs(pt1-pt2)**n))**(1d0/dble(n))
 
 
-END FUNCTION dist_N
+end function dist_n
 
 !Pullback of the Euclidean metric onto the equal energy density constraint surface.
 !DOUBLE PRECISION FUNCTION pullback_eucl(pt1,pt2)
@@ -269,87 +300,6 @@ END FUNCTION dist_N
 
 !******************************************************************
 
-!Function to make a cluster centered at "center."
-FUNCTION make_blob(center,N,sigma)
-IMPLICIT NONE
-
-	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: center
-	DOUBLE PRECISION, OPTIONAL, INTENT(IN) :: sigma
-	DOUBLE PRECISION :: std
-	INTEGER, INTENT(IN) :: N
-	DOUBLE PRECISION, DIMENSION(:,:), ALLOCATABLE :: make_blob
-	INTEGER :: i,j
-
-	!Optional argument for standard deviation.
-	IF (PRESENT(sigma)) THEN
-		std = sigma
-	ELSE
-		std = 1D0
-	END IF
-
-	CALL init_random_seed()
-
-	ALLOCATE(make_blob(N,SIZE(center)))
-
-	DO j=1,SIZE(center)
-		DO i=1,N
-			make_blob(i,j) = normal(center(j),std)
-		END DO
-	END DO
-
-
-END FUNCTION make_blob
-
-!************************************************************************
-!This returns a normal distribution.  Taken from http://www.sdsc.edu/~tkaiser/f90.html .
-
-function normal(mean,sigma) 
-        implicit none
-	DOUBLE PRECISION, parameter :: pi = 3.141592653589793239D0
-        DOUBLE PRECISION :: normal,tmp, ran1, ran2
-        DOUBLE PRECISION ::  mean,sigma
-        INTEGER :: flag
-        DOUBLE PRECISION :: fac,gsave,rsq,r1,r2
-        save flag,gsave
-        data flag /0/
-        if (flag.eq.0) then
-        rsq=2.0D0
-        do while(rsq.ge. 1.0D0 .or. rsq.eq. 0.0D0)
-		CALL random_number(ran1)
-		CALL random_number(ran2)
-                r1=2.0D0*ran1-1.0D0
-                r2=2.0D0*ran2-1.0D0
-                rsq=r1*r1+r2*r2
-        enddo
-            fac=sqrt(-2.0D0*log(rsq)/rsq)
-            gsave=r1*fac
-            tmp=r2*fac
-            flag=1
-        else
-            tmp=gsave
-            flag=0
-        endif
-        normal=tmp*sigma+mean
-      	RETURN
-end function normal
-
-!Subroutine to initialize random_seed according to CPU time.
-
-SUBROUTINE init_random_seed()
-IMPLICIT NONE
-            INTEGER :: i, n, clock
-            INTEGER, DIMENSION(:), ALLOCATABLE :: seed
-          
-            CALL RANDOM_SEED(size = n)
-            ALLOCATE(seed(n))
-          
-            CALL SYSTEM_CLOCK(COUNT=clock)
-          
-            seed = clock + 37* (/ (i - 1, i = 1, n) /)
-            CALL RANDOM_SEED(PUT = seed)
-          
-            DEALLOCATE(seed)
-END SUBROUTINE
 
 
 !************************************************************
@@ -359,33 +309,28 @@ END SUBROUTINE
 
 !Needs the set to be pre-sorted by first column.  REQUIRES: numbeps=Neps(set,set,eps,metric) as input!!!!
 
-INTEGER FUNCTION nearest_neighbor_density(pt,set,numbeps,eps,metric)
-IMPLICIT NONE
+!INTEGER FUNCTION nearest_neighbor_density(pt,set,numbeps,eps,metric)
+!IMPLICIT NONE
 
-	DOUBLE PRECISION, DIMENSION(:,:), INTENT(IN) :: set
-	INTERFACE
-		FUNCTION metric(pt1,pt2)
-			IMPLICIT NONE
-			DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
-			DOUBLE PRECISION :: metric
-		END FUNCTION metric
-	END INTERFACE
-	DOUBLE PRECISION, INTENT(IN) :: eps
-	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt
+!	DOUBLE PRECISION, DIMENSION(:,:), INTENT(IN) :: set
+!	INTERFACE
+!		FUNCTION metric(pt1,pt2)
+!			IMPLICIT NONE
+!			DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
+!			DOUBLE PRECISION :: metric
+!		END FUNCTION metric
+!	END INTERFACE
+!	DOUBLE PRECISION, INTENT(IN) :: eps
+!	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt
 !	INTEGER, INTENT(IN) :: overdens
-	INTEGER, DIMENSION(:), INTENT(IN) :: numbeps
-	INTEGER :: i, low, high
+!	INTEGER, DIMENSION(:), INTENT(IN) :: numbeps
+!	INTEGER :: i, low, high
 
 	!Find the nearest neighbor to pt.
-	low = location(set,pt(1))
-	IF (low==0) low=1
-	
+!	low = location(set,pt(1))
+!	IF (low==0) low=1
 
-
-	
-	
-
-END FUNCTION nearest_neighbor_density
+!END FUNCTION nearest_neighbor_density
 
 
 subroutine read_succ(success, fname, formt)
