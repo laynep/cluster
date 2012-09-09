@@ -9,9 +9,9 @@ implicit none
 	double precision, dimension(:,:), allocatable :: insulatedpts
 	double precision, dimension(:), allocatable :: eps
 	integer :: dencrit
-	logical :: printing
+	logical :: printing, auto
 
-	namelist /tablel/ length_s, length_f, width_s, width_f, printing
+	namelist /tablel/ length_s, length_f, width_s, width_f, printing, auto
 
 	!Reads file sizes from input file "setsizes.txt".
 	open(unit=1000, file="setsizes.txt", status="old", delim="apostrophe")
@@ -33,19 +33,23 @@ implicit none
 	if (printing) PRINT*,"Getting core points."
 	!Set eps in each dimn.
 	allocate(eps(size(success,2)))
-	eps=.5D0
-	dencrit=2	!At least one other point in eps-ball.
+	if (auto) then
+		call set_eps_den(success,eps,10)
+		if (printing) print*, "Epsilon is", eps
+		dencrit=2	!No other points req in eps-ball.
+	else
+		eps=.5D0
+		dencrit=2	!At least one other point in eps-ball.
+	end if
 	call get_insulatedcorepts(insulatedpts,success,fail,euclidean,eps,dencrit)
 
-	!Print the core points.
-	if (printing) then
-		print*,"Printing core points."
-		open(unit=3,file="corepoints.bin",form='unformatted')
-		do i=1,size(insulatedpts,1)
+	!Print the core points
+	if (printing) print*,"Printing core points."
+	open(unit=3,file="corepoints.bin",form='unformatted')
+	do i=1,size(insulatedpts,1)
 		write(unit=3), (insulatedpts(i,j),j=1,size(insulatedpts,2))
-		end do
-		close(unit=3)
-	end if
+	end do
+	close(unit=3)
 
 	if(allocated(eps)) deallocate(eps)
 	if(allocated(insulatedpts)) deallocate(insulatedpts)

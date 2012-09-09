@@ -210,6 +210,38 @@ implicit none
 
 end function in_box
 
+!Subroutine to set eps in each dimension according to the distribution of points in success and fail sets.  This will default eps to 10 times the average distance that one would expect between subsequent points in success.
+pure subroutine set_eps(succ,eps,n)
+implicit none
+
+	double precision, dimension(:,:), intent(in) :: succ
+	double precision, dimension(size(succ,2)), intent(out) :: eps
+	double precision, dimension(size(succ,2)) :: maxim, minim
+	double precision :: maxwork, minwork
+	integer, optional, intent(in) :: n
+	integer :: i, j
+
+	!Find min and max of succ in each dimn.
+	do i=1,size(succ,2)
+		maxwork=succ(1,i)
+		minwork=maxwork
+		if (size(succ,1).le.1) cycle
+		do j=2,size(succ,1)
+			if (succ(j,i)>maxwork) maxwork=succ(j,i)
+			if (succ(j,i)<minwork) minwork=succ(j,i)
+		end do
+		maxim(i)=maxwork
+		minim(i)=minwork
+	end do
+	!Find avg spacing and set eps.
+	if(present(n)) then
+		eps=dble(n)*((maxim-minim)/dble(size(succ,1)))
+	else
+		eps=10D0*((maxim-minim)/dble(size(succ,1)))
+	end if
+
+end subroutine set_eps
+
 
 
 !*******************************************************
