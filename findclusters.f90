@@ -34,7 +34,7 @@ implicit none
 	!Set eps in each dimn.
 	allocate(eps(size(success,2)))
 	if (auto) then
-		call set_eps_den(success,eps,10)
+		call set_eps(success,eps,10)
 		if (printing) print*, "Epsilon is", eps
 		dencrit=2	!No other points req in eps-ball.
 	else
