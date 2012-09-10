@@ -54,8 +54,6 @@ implicit none
 	else
 		!Default size of eps set to unity
 		eps=1D0
-		!eps = ((10./DBLE(SIZE(succ,1)))**(1D0/DBLE(SIZE(succ,2))))*&
-		!&(MAXVAL(succ)-MINVAL(succ))
 	end if
 
 	!Returns logical vector good with .TRUE. for good points and .FALSE. for bad ones.
@@ -126,7 +124,6 @@ implicit none
 	end interface
 	integer, dimension(size(seta,1)) :: output
 	integer :: i, j
-!	integer :: omp_get_num_threads, omp_get_thread_num
 
 	!Parallelize
 
@@ -309,6 +306,131 @@ implicit none
 
 end function dist_n
 
+!********************************************************
+
+
+
+!Subroutine that reads the success set.
+subroutine read_succ(success, fname, formt)
+implicit none
+
+	double precision, dimension(:,:), intent(inout) :: success
+	character(len=*), intent(in) :: fname
+	character(len=*), optional, intent(in) :: formt
+	integer :: check, i, j, u
+	integer :: length_s, width_s
+	integer :: stat
+
+	length_s = size(success,1)
+	width_s = size(success,2)
+
+	u=31415927
+
+	if (present(formt)) then
+		open(unit=u,status='old',file=fname,form=formt)
+	else
+		open(unit=u,status='old',file=fname)
+	end if
+
+	check = 0
+	do i=1,length_s+1
+		check = check + 1
+		if (present(formt)) then
+			read(u,iostat=stat) (success(i,j), j=1,width_s)
+			if (is_iostat_end(stat)) exit
+		else
+			read(u,iostat=stat,fmt=*) (success(i,j), j=1,width_s)
+			if (is_iostat_end(stat)) exit
+		end if
+		if(check==size(success,1)) exit
+	end do
+
+	close(unit=u)
+
+end subroutine read_succ
+
+
+!Subroutine that reads the fail set.
+subroutine read_fail(fail, fname,formt)
+implicit none
+
+	double precision, dimension(:,:), intent(inout) :: fail
+	character(len=*), intent(in) :: fname
+	character(len=*), optional, intent(in) :: formt
+	integer :: check, i, j, u
+	integer :: length_f, width_f
+
+	length_f = size(fail,1)
+	width_f = size(fail,2)
+
+	u=31415927
+
+	if (present(formt)) then
+		open(unit=u,status='old',file=fname,form=formt)
+	else
+		open(unit=u,status='old',file=fname)
+	end if
+
+	check = 0
+	do i=1,length_f+1
+		check = check + 1
+		if (present(formt)) then
+			read(u,end=10) (fail(i,j), j=1,width_f)
+		else
+			read(u,end=10,fmt=*) (fail(i,j), j=1,width_f)
+		end if
+		if(check==size(fail,1)) exit
+	end do
+
+10	close(unit=u)
+
+
+end subroutine read_fail
+
+
+!Subroutine that generates uniform noise to compare our success and fail sets against.  Normalized versus the maximum and minimum elements in each dimension for the comparison set.
+subroutine noise(set, mnm, maxm)
+use rng
+implicit none
+
+	double precision, dimension(:,:), intent(out) :: set
+	double precision, dimension(:), intent(in) :: mnm, maxm
+	integer :: i
+
+	!Get random numbers.
+	call random_number(set)
+
+	!Normalize it.
+	do i=1,size(set,2)
+		set(:,i)=set(:,i)*(maxm(i)-mnm(i)) + mnm(i)
+	end do	
+
+
+end subroutine noise
+
+
+
+
+end module fcluster
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 !Pullback of the Euclidean metric onto the equal energy density constraint surface.
 !DOUBLE PRECISION FUNCTION pullback_eucl(pt1,pt2)
 !IMPLICIT NONE
@@ -363,91 +485,6 @@ end function dist_n
 !	IF (low==0) low=1
 
 !END FUNCTION nearest_neighbor_density
-
-
-subroutine read_succ(success, fname, formt)
-implicit none
-
-	double precision, dimension(:,:), intent(inout) :: success
-	character(len=*), intent(in) :: fname
-	character(len=*), optional, intent(in) :: formt
-	integer :: check, i, j, u
-	integer :: length_s, width_s
-
-	length_s = size(success,1)
-	width_s = size(success,2)
-
-	u=31415927
-
-	if (present(formt)) then
-		open(unit=u,status='old',file=fname,form=formt)
-	else
-		open(unit=u,status='old',file=fname)
-	end if
-
-	check = 0
-	do i=1,length_s+1
-		check = check + 1
-		if (present(formt)) then
-			read(u,end=10) (success(i,j), j=1,width_s)
-		else
-			read(u,end=10,fmt=*) (success(i,j), j=1,width_s)
-		end if
-		if(check==size(success,1)) exit
-	end do
-
-10	close(unit=u)
-
-end subroutine read_succ
-
-
-
-subroutine read_fail(fail, fname,formt)
-implicit none
-
-	double precision, dimension(:,:), intent(inout) :: fail
-	character(len=*), intent(in) :: fname
-	character(len=*), optional, intent(in) :: formt
-	integer :: check, i, j, u
-	integer :: length_f, width_f
-
-	length_f = size(fail,1)
-	width_f = size(fail,2)
-
-	u=31415927
-
-	if (present(formt)) then
-		open(unit=u,status='old',file=fname,form=formt)
-	else
-		open(unit=u,status='old',file=fname)
-	end if
-
-	check = 0
-	do i=1,length_f+1
-		check = check + 1
-		if (present(formt)) then
-			read(u,end=10) (fail(i,j), j=1,width_f)
-		else
-			read(u,end=10,fmt=*) (fail(i,j), j=1,width_f)
-		end if
-		if(check==size(fail,1)) exit
-	end do
-
-10	close(unit=u)
-
-
-end subroutine read_fail
-
-
-END MODULE fcluster
-
-
-
-
-
-
-
-
 
 
 
