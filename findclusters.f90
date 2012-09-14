@@ -4,12 +4,13 @@ use sorters
 implicit none
 
 	double precision, dimension(:,:), allocatable :: success, fail
-	integer :: i,j,k,check
+	integer :: i,j,k, kend, check
 	integer :: length_s, length_f, width_s, width_f
 	double precision, dimension(:,:), allocatable :: insulatedpts
 	double precision, dimension(:), allocatable :: eps
 	integer :: dencrit
 	logical :: printing, auto
+	character(len=18) :: corename
 
 	namelist /tablel/ length_s, length_f, width_s, width_f, printing, auto
 
@@ -33,26 +34,40 @@ implicit none
 	if (printing) PRINT*,"Getting core points."
 	!Set eps in each dimn.
 	allocate(eps(size(success,2)))
-	if (auto) then
-		call set_eps(success,eps,10)
-		if (printing) print*, "Epsilon is", eps
-		dencrit=2	!No other points req in eps-ball.
-	else
-		eps=.5D0
-		dencrit=2	!At least one other point in eps-ball.
-	end if
-	call get_insulatedcorepts(insulatedpts,success,fail,euclidean,eps,dencrit)
+	!Set loop end st numb pts in box ~ size(success,1)/20
+!	kend=(size(success,1)/100)/20
+kend=5
 
-	!Print the core points
-	if (printing) print*,"Printing core points."
-	open(unit=3,file="corepoints.bin",form='unformatted')
-	do i=1,size(insulatedpts,1)
-		write(unit=3), (insulatedpts(i,j),j=1,size(insulatedpts,2))
+	do k=0,kend
+		if (auto) then
+			!Auto set eps to n times avg spatial distance.
+			call set_eps(success,eps,(100*k+1))
+			if (printing) print*, "Epsilon is", eps
+			dencrit=2	!At least one other point in eps-ball.
+		else
+			eps=.5D0
+			dencrit=2	!At least one other point in eps-ball.
+		end if
+		call get_insulatedcorepts(insulatedpts,success,fail,&
+			&euclidean,eps,dencrit)
+		!Print the core points
+		if (printing) print*,"Printing core points for eps=",eps
+		!Name file.
+		write(corename,'(a,i4.4,a)')'corepoints',(k+1),".bin"
+		!Open file.
+		open(unit=3,file=corename,form='unformatted')
+		do i=1,size(insulatedpts,1)
+			write(unit=3), (insulatedpts(i,j),j=1,size(insulatedpts,2))
+		end do
+		close(unit=3)		
+		!Exit if already selecting at least half the points in success.
+		if (printing) print*,real(size(insulatedpts))/real(size(success)),&
+			&"Percent of total are core points"
+		!Deallocate the insulatedpts array for next loop.
+		if(allocated(insulatedpts)) deallocate(insulatedpts)
 	end do
-	close(unit=3)
 
 	if(allocated(eps)) deallocate(eps)
-	if(allocated(insulatedpts)) deallocate(insulatedpts)
 	if(allocated(success)) deallocate(success)
 	if(allocated(fail)) deallocate(fail)
 

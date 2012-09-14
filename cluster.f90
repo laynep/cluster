@@ -99,7 +99,7 @@ implicit none
 	!Get number of points in eps-Neigh for each succ point wrt fail set.
 	call Neps(epsnumb_fail,succ,fail,eps,metric)
 
-	!If more than critical numb of good points in eps-Neigh and zero fail points, then consider this to be a good point.
+	!If more than crit numb of good pts in eps-Neigh & 0 fail points, then good point.
 	goodpts(:) = ((epsnumb_succ(:) .ge. dencrit) .and. epsnumb_fail(:)==0)
 
 
@@ -161,10 +161,15 @@ implicit none
 	if (low==0) low=1
 	high= location(set,pt(1)+eps(1))
 
+	!Run through array.
 	eps_neigh=0
 	do i=low,high
-		if (in_box(set(i,:),pt,eps,metric)) then
-			eps_neigh=eps_neigh+1
+		!Quick scan of chosen point.
+		if(any(abs(set(i,:)-pt)>eps)) then
+			cycle
+			!If pass, then call in_box.
+		else if (in_box(set(i,:),pt,eps,metric)) then
+				eps_neigh=eps_neigh+1
 		end if
 	end do
 
@@ -186,24 +191,11 @@ implicit none
 		end function metric
 	end interface
 	double precision :: dist
-	double precision, dimension(size(pt1)) :: scale1, scale2
 	integer :: i
 
 	!Rescale the points so that eps-ball has unit radius.
-	do i=1,size(pt1)
-		scale1(i)=pt1(i)/eps(i)
-		scale2(i)=pt2(i)/eps(i)
-	end do
-	
-	!Calc distance between points.
-	dist = metric(scale1,scale2)
-
 	!Determine if in unit radius.
-	if (dist .le. 1D0) then
-		in_box=.true.
-	else
-		in_box=.false.
-	end if
+	in_box= (metric(pt1/eps,pt2/eps) .le. 1D0)
 
 end function in_box
 
