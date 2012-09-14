@@ -1,6 +1,7 @@
 program findclusters
 use fcluster
 use sorters
+use rng
 implicit none
 
 	double precision, dimension(:,:), allocatable :: success, fail
@@ -9,10 +10,11 @@ implicit none
 	double precision, dimension(:,:), allocatable :: insulatedpts
 	double precision, dimension(:), allocatable :: eps
 	integer :: dencrit
-	logical :: printing, auto
+	logical :: printing, auto, shuffling
 	character(len=18) :: corename
+	real :: ratio
 
-	namelist /tablel/ length_s, length_f, width_s, width_f, printing, auto
+	namelist /tablel/ length_s, length_f, width_s, width_f, printing, auto, shuffling
 
 	!Reads file sizes from input file "setsizes.txt".
 	open(unit=1000, file="setsizes.txt", status="old", delim="apostrophe")
@@ -25,6 +27,11 @@ implicit none
 	call read_succ(success, "totalsucc.bin","unformatted")
 	call read_fail(fail, "totalfail.bin","unformatted")
 
+	!If comparing vs a shuffled set, then shuffle.
+	if (shuffling) then
+		if (printing) print*,"Shuffling the data set."
+		call shuffle_cut(success,fail)
+	end if
 	!Sort the success and fail sets by value in first column.
 	if (printing) print*, "Sorting files."
 	call heapsort(success)
@@ -35,8 +42,7 @@ implicit none
 	!Set eps in each dimn.
 	allocate(eps(size(success,2)))
 	!Set loop end st numb pts in box ~ size(success,1)/20
-!	kend=(size(success,1)/100)/20
-kend=5
+	kend=(size(success,1)/100)/20
 
 	do k=0,kend
 		if (auto) then
@@ -61,10 +67,12 @@ kend=5
 		end do
 		close(unit=3)		
 		!Exit if already selecting at least half the points in success.
-		if (printing) print*,real(size(insulatedpts))/real(size(success)),&
-			&"Percent of total are core points"
+		ratio=real(size(insulatedpts))/real(size(success))
+		if (printing) print*,ratio, "Percent of total are core points"
 		!Deallocate the insulatedpts array for next loop.
 		if(allocated(insulatedpts)) deallocate(insulatedpts)
+		!Leave if we're not getting any corepoints after 5 iterations.
+		if (k>5 .and. ratio<1E-6) exit
 	end do
 
 	if(allocated(eps)) deallocate(eps)

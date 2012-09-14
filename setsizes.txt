@@ -1,10 +1,11 @@
 &tablel
-	length_s=100000, 
+	length_s=100000, !Dimens for sample
 	length_f=178657, 
 	width_s=2, 
 	width_f=2,
-	printing=.true.,
-	auto=.true.
+	printing=.true., !Want to print to stdout?
+	auto=.true.,	 !Auto choose eps?
+	shuffling=.true.	 !Compare vs shuffled data set?
 /
 #&tablel
 #	length_s=1000, 
