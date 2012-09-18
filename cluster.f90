@@ -16,6 +16,7 @@
 module fcluster
   use sorters
   use types, only : dp
+  use features, only : newunit
   implicit none
 
 contains
@@ -314,9 +315,9 @@ subroutine read_succ(success, fname, formt)
 	!u=31415927
 
 	if (present(formt)) then
-		open(newunit=u,status='old',file=fname,form=formt)
+		open(unit=newunit(u),status='old',file=fname,form=formt)
 	else
-		open(newunit=u,status='old',file=fname)
+		open(unit=newunit(u),status='old',file=fname)
 	end if
 
 	check = 0
@@ -353,9 +354,9 @@ subroutine read_fail(fail, fname, formt)
 	!u=31415927
 
 	if (present(formt)) then
-		open(newunit=u,status='old',file=fname,form=formt)
+		open(unit=newunit(u),status='old',file=fname,form=formt)
 	else
-		open(newunit=u,status='old',file=fname)
+		open(unit=newunit(u),status='old',file=fname)
 	end if
 
 	check = 0
