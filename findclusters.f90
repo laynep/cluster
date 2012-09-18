@@ -3,6 +3,7 @@ program findclusters
   use sorters
   use rng
   use types, only : dp
+  use features, only : newunit
   implicit none
 
 	real(dp), dimension(:,:), allocatable :: success, fail
@@ -20,7 +21,7 @@ program findclusters
   namelist /phy_param/ energy_scale, mplanck
 
 	!Reads file sizes from input file "setsizes.txt".
-	open(newunit=u, file="setsizes.txt", status="old", delim="apostrophe")
+	open(unit=newunit(u), file="setsizes.txt", status="old", delim="apostrophe")
 	read(unit=u, nml=tablel)
   read(unit=u, nml=phy_param)
 	close(unit=u)
@@ -56,7 +57,7 @@ program findclusters
 		!Name file.
 		write(corename,'(a,i4.4,a)')'corepoints',(k+1),".bin"
 		!Open file.
-		open(newunit=u,file=corename,form='unformatted')
+		open(unit=newunit(u),file=corename,form='unformatted')
 		do i=1,size(insulatedpts,1)
 			write(unit=u), (insulatedpts(i,j),j=1,size(insulatedpts,2))
 		end do
@@ -84,7 +85,7 @@ program findclusters
   		!Name file.
   		write(corename,'(a,i4.4,a)')'corepoints',(k+1),".bin"
   		!Open file.
-  		open(newunit=u,file=corename,form='unformatted')
+  		open(unit=newunit(u),file=corename,form='unformatted')
   		do i=1,size(insulatedpts,1)
   			write(unit=u), (insulatedpts(i,j),j=1,size(insulatedpts,2))
   		end do
