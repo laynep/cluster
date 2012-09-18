@@ -53,6 +53,7 @@ program findclusters
     !Set eps to order of Hubble parameter, i.e. the size of quantum fluctuations
     !in the fields.
     eps=(energy_scale**2)/mplanck
+    dencrit=1
     if (printing) print*,"Printing core points for eps=",eps
 		!Name file.
 		write(corename,'(a,i4.4,a)')'corepoints',(k+1),".bin"
