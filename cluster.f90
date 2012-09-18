@@ -13,11 +13,12 @@
 !If you only want to find sufficiently clustered points in "succ", without reference to a fail set, then input "fail" as one point sufficiently removed from the others.  (Input as null?? Not tested...)
 
 
-MODULE fcluster
-USE sorters
-IMPLICIT NONE
+module fcluster
+  use sorters
+  use types, only : dp
+  implicit none
 
-CONTAINS
+contains
 
 
 
@@ -26,20 +27,21 @@ CONTAINS
 subroutine get_insulatedcorepts(core,succ,fail,metric,sizeneighb,dencrit)
 implicit none
 
-	double precision, dimension(:,:), intent(in) :: succ, fail
+	real(dp), dimension(:,:), intent(in) :: succ, fail
 	interface
 		pure function metric(pt1,pt2)
-			implicit none
-			double precision, dimension(:), intent(in) :: pt1, pt2
-			double precision :: metric
+		  use types, only : dp
+    	implicit none
+		  real(dp), dimension(:), intent(in) :: pt1, pt2
+			real(dp) :: metric
 		end function metric
 	end interface
-	double precision, dimension(:), intent(in), optional :: sizeneighb
+	real(dp), dimension(:), intent(in), optional :: sizeneighb
 	integer, intent(in), optional :: dencrit
-	double precision, dimension(:,:), allocatable :: core
+	real(dp), dimension(:,:), allocatable :: core
 	logical, dimension(size(succ,1)) :: good
 	integer :: i, length, cnt, density
-	double precision, dimension(size(succ,2)) :: eps
+	real(dp), dimension(size(succ,2)) :: eps
 
 	!Set the optional arguments.
 	if (present(dencrit)) then
@@ -53,7 +55,7 @@ implicit none
 		eps = sizeneighb
 	else
 		!Default size of eps set to unity
-		eps=1D0
+		eps=1_dp
 	end if
 
 	!Returns logical vector good with .TRUE. for good points and .FALSE. for bad ones.
@@ -74,19 +76,20 @@ implicit none
 	
 end subroutine get_insulatedcorepts
 
-!Functions which returns a Logical vector goodpts that has a .TRUE. for every point in succ that has 1) Neps(succ) > dencrit 2) Neps(fail)=0.
+!Function which returns a Logical vector goodpts that has a .TRUE. for every point in succ that has 1) Neps(succ) > dencrit 2) Neps(fail)=0.
 
 function goodpts(succ,fail,eps,dencrit,metric)
 implicit none
 
-	double precision, dimension(:,:), intent(in) :: succ, fail
-	double precision, dimension(:), intent(in) :: eps
+	real(dp), dimension(:,:), intent(in) :: succ, fail
+	real(dp), dimension(:), intent(in) :: eps
 	integer, intent(in) :: dencrit
 	interface
 		pure function metric(pt1,pt2)
-			implicit none
-			double precision, dimension(:), intent(in) :: pt1, pt2
-			double precision :: metric
+		  use types, only : dp
+    	implicit none
+			real(dp), dimension(:), intent(in) :: pt1, pt2
+			real(dp) :: metric
 		end function metric
 	end interface
 	logical, dimension(size(succ,1)) :: goodpts
@@ -113,13 +116,14 @@ subroutine Neps(output, setA, setB, eps, metric)
 use omp_lib
 implicit none
 
-	double precision, dimension(:,:), intent(in) :: seta, setb
-	double precision, dimension(:), intent(in) :: eps
+	real(dp), dimension(:,:), intent(in) :: seta, setb
+	real(dp), dimension(:), intent(in) :: eps
 	interface
 		pure function metric(pt1,pt2)
-			implicit none
-			double precision, dimension(:), intent(in) :: pt1, pt2
-			double precision :: metric
+		  use types, only : dp
+    	implicit none
+			real(dp), dimension(:), intent(in) :: pt1, pt2
+			real(dp) :: metric
 		end function metric
 	end interface
 	integer, dimension(size(seta,1)) :: output
@@ -143,17 +147,18 @@ end subroutine Neps
 pure integer function eps_neigh(pt, set, eps, metric)
 implicit none
 
-	double precision, dimension(:), intent(in) :: eps
+	real(dp), dimension(:), intent(in) :: eps
 	interface
 		pure function metric(pt1,pt2)
-			implicit none
-			double precision, dimension(:), intent(in) :: pt1, pt2
-			double precision :: metric
+		  use types, only : dp
+    	implicit none
+			real(dp), dimension(:), intent(in) :: pt1, pt2
+			real(dp) :: metric
 		end function metric
 	end interface
-	double precision, dimension(:,:), intent(in) :: set
-	double precision, dimension(:), intent(in) :: pt
-	double precision :: x
+	real(dp), dimension(:,:), intent(in) :: set
+	real(dp), dimension(:), intent(in) :: pt
+	real(dp) :: x
 	integer :: i, low, high
 
 	!Find number of points in set that are within eps in ith dimension.
@@ -167,7 +172,7 @@ implicit none
 		!Quick scan of chosen point.
 		if(any(abs(set(i,:)-pt)>eps)) then
 			cycle
-			!If pass, then call in_box.
+		!If pass, then call in_box.
 		else if (in_box(set(i,:),pt,eps,metric)) then
 				eps_neigh=eps_neigh+1
 		end if
@@ -181,21 +186,22 @@ end function eps_neigh
 pure function in_box(pt1,pt2,eps,metric)
 implicit none
 
-	double precision, dimension(:), intent(in) :: pt1, pt2, eps
+	real(dp), dimension(:), intent(in) :: pt1, pt2, eps
 	logical :: in_box
 	interface
 		pure function metric(pt1,pt2)
-			implicit none
-			double precision, dimension(:), intent(in) :: pt1, pt2
-			double precision :: metric
+		  use types, only : dp
+    	implicit none
+			real(dp), dimension(:), intent(in) :: pt1, pt2
+			real(dp) :: metric
 		end function metric
 	end interface
-	double precision :: dist
+	real(dp) :: dist
 	integer :: i
 
 	!Rescale the points so that eps-ball has unit radius.
 	!Determine if in unit radius.
-	in_box= (metric(pt1/eps,pt2/eps) .le. 1D0)
+	in_box= (metric(pt1/eps,pt2/eps) .le. 1_dp)
 
 end function in_box
 
@@ -203,10 +209,10 @@ end function in_box
 pure subroutine set_eps(succ,eps,n)
 implicit none
 
-	double precision, dimension(:,:), intent(in) :: succ
-	double precision, dimension(size(succ,2)), intent(out) :: eps
-	double precision, dimension(size(succ,2)) :: maxim, minim
-	double precision :: maxwork, minwork
+	real(dp), dimension(:,:), intent(in) :: succ
+	real(dp), dimension(size(succ,2)), intent(out) :: eps
+	real(dp), dimension(size(succ,2)) :: maxim, minim
+	real(dp) :: maxwork, minwork
 	integer, optional, intent(in) :: n
 	integer :: i, j
 
@@ -226,7 +232,7 @@ implicit none
 	if(present(n)) then
 		eps=dble(n)*((maxim-minim)/dble(size(succ,1)))
 	else
-		eps=10D0*((maxim-minim)/dble(size(succ,1)))
+		eps=10_dp*((maxim-minim)/dble(size(succ,1)))
 	end if
 
 end subroutine set_eps
@@ -243,8 +249,8 @@ end subroutine set_eps
 pure integer function location(table,x)
 implicit none
 
-	double precision, dimension(:,:),intent(in) :: table
-	double precision, intent(in) :: x
+	real(dp), dimension(:,:),intent(in) :: table
+	real(dp), intent(in) :: x
 	integer :: jl, ju, n, jm
 	integer :: i
 	integer :: j
@@ -269,31 +275,31 @@ end function location
 !********************************************************
 !Different metrics.  Computes distance between two D-dimensional points expressed as a vector.
 
-pure double precision function manhattan(pt1,pt2)
+pure real(dp) function manhattan(pt1,pt2)
 implicit none
 
-	double precision, dimension(:), intent(in) :: pt1, pt2
+	real(dp), dimension(:), intent(in) :: pt1, pt2
 
 	manhattan=sum(abs(pt1-pt2))
 
 end function manhattan
 
-pure double precision function euclidean(pt1,pt2)
+pure real(dp) function euclidean(pt1,pt2)
 implicit none
 
-	double precision, dimension(:), intent(in) :: pt1, pt2
+	real(dp), dimension(:), intent(in) :: pt1, pt2
 
 	euclidean=sqrt(sum((pt1-pt2)*(pt1-pt2)))
 
 end function euclidean
 
-pure double precision function dist_n(pt1,pt2,n)
+pure real(dp) function dist_n(pt1,pt2,n)
 implicit none
 
-	double precision, dimension(:), intent(in) :: pt1, pt2
+	real(dp), dimension(:), intent(in) :: pt1, pt2
 	integer, intent(in) :: n
 
-	dist_n = (sum(abs(pt1-pt2)**n))**(1d0/dble(n))
+	dist_n = (sum(abs(pt1-pt2)**n))**(1_dp/dble(n))
 
 
 end function dist_n
@@ -306,7 +312,7 @@ end function dist_n
 subroutine read_succ(success, fname, formt)
 implicit none
 
-	double precision, dimension(:,:), intent(inout) :: success
+	real(dp), dimension(:,:), intent(inout) :: success
 	character(len=*), intent(in) :: fname
 	character(len=*), optional, intent(in) :: formt
 	integer :: check, i, j, u
@@ -343,10 +349,10 @@ end subroutine read_succ
 
 
 !Subroutine that reads the fail set.
-subroutine read_fail(fail, fname,formt)
+subroutine read_fail(fail, fname, formt)
 implicit none
 
-	double precision, dimension(:,:), intent(inout) :: fail
+	real(dp), dimension(:,:), intent(inout) :: fail
 	character(len=*), intent(in) :: fname
 	character(len=*), optional, intent(in) :: formt
 	integer :: check, i, j, u
@@ -382,11 +388,10 @@ end subroutine read_fail
 
 !Subroutine that generates uniform noise to compare our success and fail sets against.  Normalized versus the maximum and minimum elements in each dimension for the comparison set.
 subroutine noise(set, mnm, maxm)
-use rng
 implicit none
 
-	double precision, dimension(:,:), intent(out) :: set
-	double precision, dimension(:), intent(in) :: mnm, maxm
+	real(dp), dimension(:,:), intent(out) :: set
+	real(dp), dimension(:), intent(in) :: mnm, maxm
 	integer :: i
 
 	!Get random numbers.
@@ -424,19 +429,19 @@ end module fcluster
 
 
 !Pullback of the Euclidean metric onto the equal energy density constraint surface.
-!DOUBLE PRECISION FUNCTION pullback_eucl(pt1,pt2)
+!real(dp) FUNCTION pullback_eucl(pt1,pt2)
 !IMPLICIT NONE
 
-!	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
-!	DOUBLE PRECISION, DIMENSION(SIZE(pt1),SIZE(pt2)) :: metric
-!	DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: diff
+!	real(dp), DIMENSION(:), INTENT(IN) :: pt1, pt2
+!	real(dp), DIMENSION(SIZE(pt1),SIZE(pt2)) :: metric
+!	real(dp), DIMENSION(:), ALLOCATABLE :: diff
 
 !	ALLOCATE(diff(SIZE(pt1)))
 !	diff=pt1-pt2
 
-!	metric = 0D0
+!	metric = 0_dp
 
-!	pullback_eucl=0D0
+!	pullback_eucl=0_dp
 
 	
 
@@ -458,16 +463,16 @@ end module fcluster
 !INTEGER FUNCTION nearest_neighbor_density(pt,set,numbeps,eps,metric)
 !IMPLICIT NONE
 
-!	DOUBLE PRECISION, DIMENSION(:,:), INTENT(IN) :: set
+!	real(dp), DIMENSION(:,:), INTENT(IN) :: set
 !	INTERFACE
 !		FUNCTION metric(pt1,pt2)
 !			IMPLICIT NONE
-!			DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt1, pt2
-!			DOUBLE PRECISION :: metric
+!			real(dp), DIMENSION(:), INTENT(IN) :: pt1, pt2
+!			real(dp) :: metric
 !		END FUNCTION metric
 !	END INTERFACE
-!	DOUBLE PRECISION, INTENT(IN) :: eps
-!	DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: pt
+!	real(dp), INTENT(IN) :: eps
+!	real(dp), DIMENSION(:), INTENT(IN) :: pt
 !	INTEGER, INTENT(IN) :: overdens
 !	INTEGER, DIMENSION(:), INTENT(IN) :: numbeps
 !	INTEGER :: i, low, high

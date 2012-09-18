@@ -1,14 +1,15 @@
 program findclusters
-use fcluster
-use sorters
-use rng
-implicit none
+  use fcluster
+  use sorters
+  use rng
+  use types, only : dp
+  implicit none
 
-	double precision, dimension(:,:), allocatable :: success, fail
+	real(dp), dimension(:,:), allocatable :: success, fail
 	integer :: i,j,k, kend, check
 	integer :: length_s, length_f, width_s, width_f
-	double precision, dimension(:,:), allocatable :: insulatedpts
-	double precision, dimension(:), allocatable :: eps
+	real(dp), dimension(:,:), allocatable :: insulatedpts
+	real(dp), dimension(:), allocatable :: eps
 	integer :: dencrit
 	logical :: printing, auto, shuffling
 	character(len=18) :: corename
@@ -38,7 +39,7 @@ implicit none
 	call heapsort(fail)
 
 	!Get the core points.
-	if (printing) PRINT*,"Getting core points."
+	if (printing) print*,"Getting core points."
 	!Set eps in each dimn.
 	allocate(eps(size(success,2)))
 	!Set loop end st numb pts in box ~ size(success,1)/20
@@ -49,9 +50,9 @@ implicit none
 			!Auto set eps to n times avg spatial distance.
 			call set_eps(success,eps,(100*k+1))
 			if (printing) print*, "Epsilon is", eps
-			dencrit=2	!At least one other point in eps-ball.
+			dencrit=1	!No other points required in eps-ball.
 		else
-			eps=.5D0
+			eps=.5_dp
 			dencrit=2	!At least one other point in eps-ball.
 		end if
 		call get_insulatedcorepts(insulatedpts,success,fail,&
@@ -66,8 +67,8 @@ implicit none
 			write(unit=3), (insulatedpts(i,j),j=1,size(insulatedpts,2))
 		end do
 		close(unit=3)		
-		!Exit if already selecting at least half the points in success.
-		ratio=real(size(insulatedpts))/real(size(success))
+		!Ratio of points in cluster to points in success.
+    ratio=real(size(insulatedpts))/real(size(success))
 		if (printing) print*,ratio, "Percent of total are core points"
 		!Deallocate the insulatedpts array for next loop.
 		if(allocated(insulatedpts)) deallocate(insulatedpts)
@@ -80,36 +81,4 @@ implicit none
 	if(allocated(fail)) deallocate(fail)
 
 end program findclusters
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
