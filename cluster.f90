@@ -20,12 +20,9 @@ module fcluster
 
 contains
 
-
-
 !Function which returns all the good points.  Sizeneigh and dencrit are optional arguments that have the defaults set to unity.
-
 subroutine get_insulatedcorepts(core,succ,fail,metric,sizeneighb,dencrit)
-implicit none
+	implicit none
 
 	real(dp), dimension(:,:), intent(in) :: succ, fail
 	interface
@@ -77,9 +74,8 @@ implicit none
 end subroutine get_insulatedcorepts
 
 !Function which returns a Logical vector goodpts that has a .TRUE. for every point in succ that has 1) Neps(succ) > dencrit 2) Neps(fail)=0.
-
 function goodpts(succ,fail,eps,dencrit,metric)
-implicit none
+	implicit none
 
 	real(dp), dimension(:,:), intent(in) :: succ, fail
 	real(dp), dimension(:), intent(in) :: eps
@@ -94,8 +90,6 @@ implicit none
 	end interface
 	logical, dimension(size(succ,1)) :: goodpts
 	integer, dimension(size(succ,1)) :: epsnumb_succ, epsnumb_fail
-	integer :: i
-
 	
 	!Get number of points in eps-Neigh for each succ point wrt succ set.
 	call Neps(epsnumb_succ,succ,succ,eps,metric)
@@ -105,16 +99,14 @@ implicit none
 	!If more than crit numb of good pts in eps-Neigh & 0 fail points, then good point.
 	goodpts(:) = ((epsnumb_succ(:) .ge. dencrit) .and. epsnumb_fail(:)==0)
 
-
-
 end function goodpts
 
 
 
 !Function which takes two sets, setA and setB, and returns the vector Neps that is the number of points in the epsilon-neighborhood of each element in setA with respect to setB.
 subroutine Neps(output, setA, setB, eps, metric)
-use omp_lib
-implicit none
+	use omp_lib
+	implicit none
 
 	real(dp), dimension(:,:), intent(in) :: seta, setb
 	real(dp), dimension(:), intent(in) :: eps
@@ -127,14 +119,14 @@ implicit none
 		end function metric
 	end interface
 	integer, dimension(size(seta,1)) :: output
-	integer :: i, j
+	integer :: i
 
 	!Parallelize
 
 	!$OMP PARALLEL DEFAULT(NONE) &
 	!$OMP& SHARED(setA,setB,eps, output)
 	!$OMP DO SCHEDULE(STATIC)
-	do i=1,SIZE(output)
+	do i=1,size(output)
 		output(i)=eps_neigh(setA(i,:),setB, eps, metric)
 	end do
 	!$OMP END DO
@@ -145,7 +137,7 @@ end subroutine Neps
 
 !Function to find the epsilon neighborhood of a point with respect to a set of D-dimensional points given in an NxD array (that has been *heapsorted*) and a given metric.
 pure integer function eps_neigh(pt, set, eps, metric)
-implicit none
+	implicit none
 
 	real(dp), dimension(:), intent(in) :: eps
 	interface
@@ -158,7 +150,6 @@ implicit none
 	end interface
 	real(dp), dimension(:,:), intent(in) :: set
 	real(dp), dimension(:), intent(in) :: pt
-	real(dp) :: x
 	integer :: i, low, high
 
 	!Find number of points in set that are within eps in ith dimension.
@@ -178,13 +169,12 @@ implicit none
 		end if
 	end do
 
-
 end function eps_neigh
 
 
 !Function to determine whether a point "pt1" is in the "eps" box of "pt2".
 pure function in_box(pt1,pt2,eps,metric)
-implicit none
+	implicit none
 
 	real(dp), dimension(:), intent(in) :: pt1, pt2, eps
 	logical :: in_box
@@ -207,7 +197,7 @@ end function in_box
 
 !Subroutine to set eps in each dimension according to the distribution of points in success and fail sets.  This will default eps to 10 times the average distance that one would expect between subsequent points in success.
 pure subroutine set_eps(succ,eps,n)
-implicit none
+	implicit none
 
 	real(dp), dimension(:,:), intent(in) :: succ
 	real(dp), dimension(size(succ,2)), intent(out) :: eps
@@ -245,9 +235,8 @@ end subroutine set_eps
 !This function is taken almost verbatim from Numerical Recipes pg 90.
 
 !NOTE: there is a similar subroutine in sorters_d that does this too, so this one is called "location" where that one is called "locate".
-
 pure integer function location(table,x)
-implicit none
+	implicit none
 
 	real(dp), dimension(:,:),intent(in) :: table
 	real(dp), intent(in) :: x
@@ -276,7 +265,7 @@ end function location
 !Different metrics.  Computes distance between two D-dimensional points expressed as a vector.
 
 pure real(dp) function manhattan(pt1,pt2)
-implicit none
+	implicit none
 
 	real(dp), dimension(:), intent(in) :: pt1, pt2
 
@@ -285,7 +274,7 @@ implicit none
 end function manhattan
 
 pure real(dp) function euclidean(pt1,pt2)
-implicit none
+	implicit none
 
 	real(dp), dimension(:), intent(in) :: pt1, pt2
 
@@ -294,7 +283,7 @@ implicit none
 end function euclidean
 
 pure real(dp) function dist_n(pt1,pt2,n)
-implicit none
+	implicit none
 
 	real(dp), dimension(:), intent(in) :: pt1, pt2
 	integer, intent(in) :: n
@@ -310,7 +299,7 @@ end function dist_n
 
 !Subroutine that reads the success set.
 subroutine read_succ(success, fname, formt)
-implicit none
+	implicit none
 
 	real(dp), dimension(:,:), intent(inout) :: success
 	character(len=*), intent(in) :: fname
@@ -322,12 +311,12 @@ implicit none
 	length_s = size(success,1)
 	width_s = size(success,2)
 
-	u=31415927
+	!u=31415927
 
 	if (present(formt)) then
-		open(unit=u,status='old',file=fname,form=formt)
+		open(newunit=u,status='old',file=fname,form=formt)
 	else
-		open(unit=u,status='old',file=fname)
+		open(newunit=u,status='old',file=fname)
 	end if
 
 	check = 0
@@ -350,7 +339,7 @@ end subroutine read_succ
 
 !Subroutine that reads the fail set.
 subroutine read_fail(fail, fname, formt)
-implicit none
+	implicit none
 
 	real(dp), dimension(:,:), intent(inout) :: fail
 	character(len=*), intent(in) :: fname
@@ -361,12 +350,12 @@ implicit none
 	length_f = size(fail,1)
 	width_f = size(fail,2)
 
-	u=31415927
+	!u=31415927
 
 	if (present(formt)) then
-		open(unit=u,status='old',file=fname,form=formt)
+		open(newunit=u,status='old',file=fname,form=formt)
 	else
-		open(unit=u,status='old',file=fname)
+		open(newunit=u,status='old',file=fname)
 	end if
 
 	check = 0
@@ -388,7 +377,7 @@ end subroutine read_fail
 
 !Subroutine that generates uniform noise to compare our success and fail sets against.  Normalized versus the maximum and minimum elements in each dimension for the comparison set.
 subroutine noise(set, mnm, maxm)
-implicit none
+	implicit none
 
 	real(dp), dimension(:,:), intent(out) :: set
 	real(dp), dimension(:), intent(in) :: mnm, maxm
@@ -430,7 +419,7 @@ end module fcluster
 
 !Pullback of the Euclidean metric onto the equal energy density constraint surface.
 !real(dp) FUNCTION pullback_eucl(pt1,pt2)
-!IMPLICIT NONE
+!	implicit NONE
 
 !	real(dp), DIMENSION(:), INTENT(IN) :: pt1, pt2
 !	real(dp), DIMENSION(SIZE(pt1),SIZE(pt2)) :: metric
@@ -461,7 +450,7 @@ end module fcluster
 !Needs the set to be pre-sorted by first column.  REQUIRES: numbeps=Neps(set,set,eps,metric) as input!!!!
 
 !INTEGER FUNCTION nearest_neighbor_density(pt,set,numbeps,eps,metric)
-!IMPLICIT NONE
+!	implicit NONE
 
 !	real(dp), DIMENSION(:,:), INTENT(IN) :: set
 !	INTERFACE
@@ -482,32 +471,4 @@ end module fcluster
 !	IF (low==0) low=1
 
 !END FUNCTION nearest_neighbor_density
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

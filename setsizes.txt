@@ -5,20 +5,10 @@
 	width_f=2,
 	printing=.true., !Want to print to stdout?
 	auto=.true.,	 !Auto choose eps?
-	shuffling=.true.	 !Compare vs shuffled data set?
+	shuffling=.true.,	 !Compare vs shuffled data set?
+  find_min=.true.
 /
-#&tablel
-#	length_s=1000, 
-#	length_f=1000, 
-#	width_s=2, 
-#	width_f=2,
-#	printing=.true.,
-#	auto=.true.
-#/
-
-
-
-
-
-
-
+&phy_param
+  energy_scale=1e1,
+  mplanck=1e3
+/
