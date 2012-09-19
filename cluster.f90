@@ -14,7 +14,6 @@
 
 
 module fcluster
-  use sorters
   use types, only : dp
   use features, only : newunit
   implicit none

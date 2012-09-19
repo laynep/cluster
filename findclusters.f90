@@ -1,7 +1,7 @@
 program findclusters
   use fcluster
-  use sorters
-  use rng
+  use sorters, only : heapsort
+  use rng, only : shuffle_cut
   use types, only : dp
   use features, only : newunit
   implicit none
