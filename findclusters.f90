@@ -54,6 +54,9 @@ program findclusters
     !in the fields.
     eps=(energy_scale**2)/mplanck
     dencrit=1
+    !Get the corepoints at the minimum value for epsilong.
+		call get_insulatedcorepts(insulatedpts,success,fail,&
+  			&euclidean,eps,dencrit)
     if (printing) print*,"Printing core points for eps=",eps
 		!Name file.
 		write(corename,'(a,i4.4,a)')'corepoints',(k+1),".bin"
@@ -61,6 +64,7 @@ program findclusters
 		open(unit=newunit(u),file=corename,form='unformatted')
 		do i=1,size(insulatedpts,1)
 			write(unit=u), (insulatedpts(i,j),j=1,size(insulatedpts,2))
+      print*,(insulatedpts(i,j),j=1,size(insulatedpts,2))
 		end do
 		close(unit=u)		
 		!Ratio of points in cluster to points in success.

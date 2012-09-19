@@ -1,11 +1,11 @@
 &tablel
-	length_s=100000, !Dimens for sample
-	length_f=178657, 
-	width_s=2, 
-	width_f=2,
+	length_s=2500000, !Dimens for sample
+	length_f=3266830, 
+	width_s=4, 
+	width_f=4,
 	printing=.true., !Want to print to stdout?
 	auto=.true.,	 !Auto choose eps?
-	shuffling=.true.,	 !Compare vs shuffled data set?
+	shuffling=.false.,	 !Compare vs shuffled data set?
   find_min=.true.
 /
 &phy_param

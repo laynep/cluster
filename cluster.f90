@@ -136,7 +136,7 @@ end subroutine Neps
 
 
 !Function to find the epsilon neighborhood of a point with respect to a set of D-dimensional points given in an NxD array (that has been *heapsorted*) and a given metric.
-pure integer function eps_neigh(pt, set, eps, metric)
+integer function eps_neigh(pt, set, eps, metric)
 	implicit none
 
 	real(dp), dimension(:), intent(in) :: eps
@@ -145,6 +145,7 @@ pure integer function eps_neigh(pt, set, eps, metric)
 		  use types, only : dp
     	implicit none
 			real(dp), dimension(:), intent(in) :: pt1, pt2
+      !Get the corepoints at the minimum value for epsilong.
 			real(dp) :: metric
 		end function metric
 	end interface
