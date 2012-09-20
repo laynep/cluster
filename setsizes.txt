@@ -1,12 +1,13 @@
 &tablel
-	length_s=2500000, !Dimens for sample
-	length_f=3266830, 
+	length_s=250000, !Dimens for sample
+	length_f=326683, 
 	width_s=4, 
 	width_f=4,
 	printing=.true., !Want to print to stdout?
 	auto=.true.,	 !Auto choose eps?
 	shuffling=.false.,	 !Compare vs shuffled data set?
-  find_min=.true.
+  find_min=.false.   !Base eps on quant fluct.
+  reduce=.true.   !Go from large to small eps and remove subseq.
 /
 &phy_param
   energy_scale=1e1,

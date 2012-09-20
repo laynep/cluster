@@ -90,11 +90,15 @@ function goodpts(succ,fail,eps,dencrit,metric)
 	end interface
 	logical, dimension(size(succ,1)) :: goodpts
 	integer, dimension(size(succ,1)) :: epsnumb_succ, epsnumb_fail
+  logical :: failstop
+
+  failstop=.true.
 	
 	!Get number of points in eps-Neigh for each succ point wrt succ set.
 	call Neps(epsnumb_succ,succ,succ,eps,metric)
 	!Get number of points in eps-Neigh for each succ point wrt fail set.
-	call Neps(epsnumb_fail,succ,fail,eps,metric)
+  !Set flag so that will stop counting when it hits one failure points.
+	call Neps(epsnumb_fail,succ,fail,eps,metric, failstop)
 
 	!If more than crit numb of good pts in eps-Neigh & 0 fail points, then good point.
 	goodpts(:) = ((epsnumb_succ(:) .ge. dencrit) .and. epsnumb_fail(:)==0)
@@ -103,8 +107,8 @@ end function goodpts
 
 
 
-!Function which takes two sets, setA and setB, and returns the vector Neps that is the number of points in the epsilon-neighborhood of each element in setA with respect to setB.
-subroutine Neps(output, setA, setB, eps, metric)
+!Function which takes two sets, setA and setB, and returns the vector Neps that is the number of points in the epsilon-neighborhood of each element in setA with respect to setB.  Also has an optional input "failstop" that will stop the counting of nearby points at one.  We can then use this when comparing against the fail set: if there's one or more points adjacent to a successful point, we can stop counting and discard that point from the protected cluster.
+subroutine Neps(output, setA, setB, eps, metric, failstop)
 	use omp_lib
 	implicit none
 
@@ -120,14 +124,19 @@ subroutine Neps(output, setA, setB, eps, metric)
 	end interface
 	integer, dimension(size(seta,1)) :: output
 	integer :: i
+  logical, intent(in), optional :: failstop
 
 	!Parallelize
 
 	!$OMP PARALLEL DEFAULT(NONE) &
-	!$OMP& SHARED(setA,setB,eps, output)
+	!$OMP& SHARED(setA,setB,eps, output, failstop)
 	!$OMP DO SCHEDULE(STATIC)
 	do i=1,size(output)
-		output(i)=eps_neigh(setA(i,:),setB, eps, metric)
+    if (present(failstop)) then
+  		output(i)=eps_neigh(setA(i,:),setB, eps, metric, failstop)
+    else
+    	output(i)=eps_neigh(setA(i,:),setB, eps, metric)
+    end if
 	end do
 	!$OMP END DO
 	!$OMP END PARALLEL
@@ -135,8 +144,9 @@ subroutine Neps(output, setA, setB, eps, metric)
 end subroutine Neps
 
 
-!Function to find the epsilon neighborhood of a point with respect to a set of D-dimensional points given in an NxD array (that has been *heapsorted*) and a given metric.
-integer function eps_neigh(pt, set, eps, metric)
+!Function to find the epsilon neighborhood of a point with respect to a set of D-dimensional points given in an NxD array (that has been *heapsorted*) and a given metric.  Also has an optional input "failstop" that will stop the counting of nearby points at one.  We can then use this when comparing against the fail set: if there's one or more points adjacent to a successful point, we can stop counting and discard that point from the protected cluster.
+s
+integer function eps_neigh(pt, set, eps, metric, failstop)
 	implicit none
 
 	real(dp), dimension(:), intent(in) :: eps
@@ -152,6 +162,7 @@ integer function eps_neigh(pt, set, eps, metric)
 	real(dp), dimension(:,:), intent(in) :: set
 	real(dp), dimension(:), intent(in) :: pt
 	integer :: i, low, high
+  logical, intent(in), optional :: failstop
 
 	!Find number of points in set that are within eps in ith dimension.
 	low= location(set,pt(1)-eps(1))
@@ -164,37 +175,16 @@ integer function eps_neigh(pt, set, eps, metric)
 		!Quick scan of chosen point.
 		if(any(abs(set(i,:)-pt)>eps)) then
 			cycle
-		!If pass, then call in_box.
-		else if (in_box(set(i,:),pt,eps,metric)) then
+		!If pass, then rescale points so that an epsilon ball has unit radius and
+    !see if the two points are within a unit of each other.
+		else if (metric(pt/eps,set(i,:)/eps) .le. 1_dp) then
 				eps_neigh=eps_neigh+1
+        if (present(failstop)) exit
 		end if
 	end do
 
 end function eps_neigh
 
-
-!Function to determine whether a point "pt1" is in the "eps" box of "pt2".
-pure function in_box(pt1,pt2,eps,metric)
-	implicit none
-
-	real(dp), dimension(:), intent(in) :: pt1, pt2, eps
-	logical :: in_box
-	interface
-		pure function metric(pt1,pt2)
-		  use types, only : dp
-    	implicit none
-			real(dp), dimension(:), intent(in) :: pt1, pt2
-			real(dp) :: metric
-		end function metric
-	end interface
-	real(dp) :: dist
-	integer :: i
-
-	!Rescale the points so that eps-ball has unit radius.
-	!Determine if in unit radius.
-	in_box= (metric(pt1/eps,pt2/eps) .le. 1_dp)
-
-end function in_box
 
 !Subroutine to set eps in each dimension according to the distribution of points in success and fail sets.  This will default eps to 10 times the average distance that one would expect between subsequent points in success.
 pure subroutine set_eps(succ,eps,n)
@@ -395,81 +385,111 @@ subroutine noise(set, mnm, maxm)
 
 end subroutine noise
 
+!A subroutine that prints the corepoints and deallocates the insulatedpoints
+!array.
+subroutine print_corepoints(success, insulatedpts, printing,eps,k)
+  implicit none
 
+  logical, intent(in) :: printing
+  real(dp), dimension(:), intent(in) :: eps
+  integer, intent(in), optional :: k
+  real(dp), dimension(:,:), allocatable, intent(inout) :: insulatedpts, success
+  integer :: u, i, j, kk
+	character(len=18) :: corename
+  real :: ratio
 
+  if (present(k)) then
+    kk=k
+  else
+    kk=1
+  end if
+
+  if (printing) print*,"Printing core points for eps=",eps
+  !Name file.
+	write(corename,'(a,i4.4,a)')'corepoints',(kk+1),".bin"
+	!Open file.
+	open(unit=newunit(u),file=corename,form='unformatted')
+	do i=1,size(insulatedpts,1)
+		write(unit=u), (insulatedpts(i,j),j=1,size(insulatedpts,2))
+!    print*,(insulatedpts(i,j),j=1,size(insulatedpts,2))
+	end do
+	close(unit=u)		
+	!Ratio of points in cluster to points in success.
+  ratio=real(size(insulatedpts))/real(size(success))
+	if (printing) print*,ratio, "Percent of total are core points"
+
+end subroutine print_corepoints
+
+!A function that removes a subset from a set.  Copies the original
+!set, which makes this pretty memory intensive for large arrays.
+function complement(set, subset, tol)
+	use sorters, only : heapsort, locate
+	implicit none
+
+	real(dp), dimension(:,:), intent(in) :: set
+	real(dp), dimension(:,:), intent(inout) :: subset
+	real(dp), optional, intent(in) :: tol
+	real(dp), dimension(:,:), allocatable :: complement
+	integer :: i, j, k, counter, start
+	logical :: same
+	logical, dimension(size(set,1)) :: take
+	real(dp) :: dt
+
+	if (present(tol)) then
+		dt=tol
+	else
+		dt=1e-10_dp
+	end if
+
+	!Presort the subset so can use locate later.
+	call heapsort(subset)
+
+	!Parallelize
+
+	!$OMP PARALLEL &
+	!$OMP& SHARED(set,subset,take)&
+	!$OMP& PRIVATE(same)
+	!$OMP DO 
+
+doi:	do i=1,size(set,1)
+    		call locate(subset,set(i,1),start)
+        if (start==0) start=1
+doj:		do j=start,size(subset,1)
+	  		same=.false.
+dok:			do k=1,size(subset,2)
+	  			if (abs(set(i,k)-subset(j,k))<dt) then
+	  				same=.true.
+	  			else
+	  				same=.false.
+	  				exit dok
+	  			end if
+	  		end do dok	
+	  		if (same) then
+	  			!Don't take this row for complement.
+	  			take(i)=.false.
+	  			exit doj
+	  		end if
+	  	end do doj
+	  	if (.not. same) then
+	  		take(i)=.true.
+	  	end if
+  	end do doi
+
+	!$OMP END DO
+	!$OMP END PARALLEL
+
+  !Make the complement array.
+  allocate(complement(count(take),size(set,2)))
+
+	counter=0
+	do i=1,size(set,1)
+			if (take(i)) then
+			  counter=counter+1
+        complement(counter,:)=set(i,:)
+		end if
+	end do
+
+end function complement
 
 end module fcluster
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-!Pullback of the Euclidean metric onto the equal energy density constraint surface.
-!real(dp) FUNCTION pullback_eucl(pt1,pt2)
-!	implicit NONE
-
-!	real(dp), DIMENSION(:), INTENT(IN) :: pt1, pt2
-!	real(dp), DIMENSION(SIZE(pt1),SIZE(pt2)) :: metric
-!	real(dp), DIMENSION(:), ALLOCATABLE :: diff
-
-!	ALLOCATE(diff(SIZE(pt1)))
-!	diff=pt1-pt2
-
-!	metric = 0_dp
-
-!	pullback_eucl=0_dp
-
-	
-
-!END FUNCTION pullback_eucl
-
-
-
-!******************************************************************
-
-
-
-!************************************************************
-!NOT READY FOR PRIMETIME: Currently implemented in Python.
-!************************************************************
-!FUNCTION that returns the number of points, N, that are in the eps-neighb of the nearest point in the data set to an argument point, pt.  This is basically a nearest-neighbor interpolation on the data set with respect to sample density.  Will be used for MCMC once a cluster has been found at a suitable value for eps.
-
-!Needs the set to be pre-sorted by first column.  REQUIRES: numbeps=Neps(set,set,eps,metric) as input!!!!
-
-!INTEGER FUNCTION nearest_neighbor_density(pt,set,numbeps,eps,metric)
-!	implicit NONE
-
-!	real(dp), DIMENSION(:,:), INTENT(IN) :: set
-!	INTERFACE
-!		FUNCTION metric(pt1,pt2)
-!			IMPLICIT NONE
-!			real(dp), DIMENSION(:), INTENT(IN) :: pt1, pt2
-!			real(dp) :: metric
-!		END FUNCTION metric
-!	END INTERFACE
-!	real(dp), INTENT(IN) :: eps
-!	real(dp), DIMENSION(:), INTENT(IN) :: pt
-!	INTEGER, INTENT(IN) :: overdens
-!	INTEGER, DIMENSION(:), INTENT(IN) :: numbeps
-!	INTEGER :: i, low, high
-
-	!Find the nearest neighbor to pt.
-!	low = location(set,pt(1))
-!	IF (low==0) low=1
-
-!END FUNCTION nearest_neighbor_density
 
