@@ -145,7 +145,6 @@ end subroutine Neps
 
 
 !Function to find the epsilon neighborhood of a point with respect to a set of D-dimensional points given in an NxD array (that has been *heapsorted*) and a given metric.  Also has an optional input "failstop" that will stop the counting of nearby points at one.  We can then use this when comparing against the fail set: if there's one or more points adjacent to a successful point, we can stop counting and discard that point from the protected cluster.
-s
 integer function eps_neigh(pt, set, eps, metric, failstop)
 	implicit none
 
