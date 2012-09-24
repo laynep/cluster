@@ -440,10 +440,10 @@ subroutine complement(comp, set, subset, tol)
 
 	!Parallelize
 
-!	!$OMP PARALLEL &
-!	!$OMP& SHARED(set,subset,take)&
-!	!$OMP& PRIVATE(same)
-!	!$OMP DO 
+	!$OMP PARALLEL &
+	!$OMP& SHARED(set,subset,take)&
+	!$OMP& PRIVATE(same)
+	!$OMP DO 
 
 doi:	do i=1,size(set,1)
     		call locate(subset,set(i,1),start)
@@ -469,10 +469,10 @@ dok:			do k=1,size(subset,2)
 	  	end if
   	end do doi
 
-!	!$OMP END DO
-!	!$OMP END PARALLEL
-!
-!  !Make the complement array.
+	!$OMP END DO
+	!$OMP END PARALLEL
+
+  !Make the complement array.
   allocate(comp(count(take),size(set,2)))
 
 	counter=0

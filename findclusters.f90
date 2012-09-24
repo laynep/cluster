@@ -96,15 +96,15 @@ program findclusters
       !Remove the corepoints from success set.  Removes points that are within
       !1e-10 of a point in the insulatedpts array.
       if (printing) print*, "Taking complement of success set."
-      call complement(work, success,insulatedpts)
-      deallocate(insulatedpts)
-      deallocate(success)
-      success=work
-      deallocate(work)
-      !Rescale eps. Note: mult two arrays multiplies element-wise, not as a
-      !matrix product.
-      eps=eps-scaling
-      if (printing) print*,"---------------------"
+!      call complement(work, success,insulatedpts)
+!      deallocate(insulatedpts)
+!      deallocate(success)
+!      success=work
+!      deallocate(work)
+!      !Rescale eps. Note: mult two arrays multiplies element-wise, not as a
+!      !matrix product.
+!      eps=eps-scaling
+!      if (printing) print*,"---------------------"
   	end do
   end if
 
