@@ -61,7 +61,11 @@ subroutine get_insulatedcorepts(core,succ,fail,metric,sizeneighb,dencrit)
 	!Returns number of .TRUE. elmts in good.
 	length = count(good)
 	
-	allocate(core(length,size(succ,2)))
+  if (length>0) then
+    allocate(core(length,size(succ,2)))
+  else
+    return
+  end if
 
 	cnt=0
 	do i=1,size(succ,1)
@@ -387,7 +391,7 @@ subroutine print_corepoints(success, insulatedpts, printing,eps,k)
   logical, intent(in) :: printing
   real(dp), dimension(:), intent(in) :: eps
   integer, intent(in), optional :: k
-  real(dp), dimension(:,:), allocatable, intent(inout) :: insulatedpts, success
+  real(dp), dimension(:,:), intent(inout) :: insulatedpts, success
   integer :: u, i, j, kk
 	character(len=18) :: corename
   real :: ratio
@@ -405,7 +409,6 @@ subroutine print_corepoints(success, insulatedpts, printing,eps,k)
 	open(unit=newunit(u),file=corename,form='unformatted')
 	do i=1,size(insulatedpts,1)
 		write(unit=u), (insulatedpts(i,j),j=1,size(insulatedpts,2))
-!    print*,(insulatedpts(i,j),j=1,size(insulatedpts,2))
 	end do
 	close(unit=u)		
 	!Ratio of points in cluster to points in success.
@@ -443,7 +446,7 @@ subroutine complement(comp, set, subset, tol)
 	!$OMP PARALLEL &
 	!$OMP& SHARED(set,subset,take,dt)&
 	!$OMP& PRIVATE(same,j,k,start)
-	!$OMP DO 
+	!$OMP DO SCHEDULE(STATIC)
 
 doi:	do i=1,size(set,1)
     		call locate(subset,set(i,1),start)

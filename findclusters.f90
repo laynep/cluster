@@ -86,21 +86,23 @@ program findclusters
     !How much to scale every step by
     allocate(scaling(size(eps)))
     scaling=(eps-(energy_scale**2)/mplanck)/(dble(kend)-1_dp)
+ 		dencrit=1	!No other points required in eps-ball.
   	do k=kend,1,-1
    		if (printing) print*, "Epsilon is", eps
- 			dencrit=1	!No other points required in eps-ball.
    		call get_insulatedcorepts(insulatedpts,success,fail,&
   			&euclidean,eps,dencrit)
       call print_corepoints(success, insulatedpts, printing,eps,k)
       !Remove the corepoints from success set.  Removes points that are within
       !1e-10 of a point in the insulatedpts array.
       if (printing) print*, "Taking complement of success set."
-      call complement(work, success,insulatedpts)
-      deallocate(insulatedpts)
-      deallocate(success)
-      allocate(success(size(work,1),size(work,2)))
-      success=work
-      deallocate(work)
+      if (allocated(insulatedpts)) then
+        call complement(work, success,insulatedpts)
+        deallocate(insulatedpts)
+        deallocate(success)
+        allocate(success(size(work,1),size(work,2)))
+        success=work
+        deallocate(work)
+      end if
       !Rescale eps. Note: mult two arrays multiplies element-wise, not as a
       !matrix product.
       eps=eps-scaling
