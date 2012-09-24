@@ -433,11 +433,14 @@ subroutine complement(comp, set, subset, tol)
 	logical, dimension(size(set,1)) :: take
 	real(dp) :: dt
 
+  !Initialize.
 	if (present(tol)) then
 		dt=tol
 	else
 		dt=1e-10_dp
 	end if
+
+  take=.false.
 
 	!Sort the subset so can use locate later.
 	call heapsort(subset)
@@ -450,10 +453,7 @@ subroutine complement(comp, set, subset, tol)
 	!$OMP DO SCHEDULE(STATIC)
 
 doi:	do i=1,size(set,1)
-        !$OMP CRITICAL
         start=location(subset,set(i,1))
-        !$OMP END CRITICAL
-
     		!call locate(subset,set(i,1),start)
         if (start==0) start=1
 doj:		do j=start,size(subset,1)
@@ -462,11 +462,9 @@ doj:		do j=start,size(subset,1)
   	  				same=.false.
   	  		else
   	  				same=.true.
-  	  		end if
-  	  		if (same) then
-  	  			!Don't take this row for complement.
-  	  			take(i)=.false.
-  	  			exit doj
+  	  			  !Don't take this row for complement.
+  	  		  	take(i)=.false.
+  	  		  	exit doj
   	  		end if
   	  	end do doj
   	  	if (.not. same) then
