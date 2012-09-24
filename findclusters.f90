@@ -42,6 +42,10 @@ program findclusters
 	close(unit=u)
 	allocate(success(length_s,width_s),fail(length_f,width_f))
 
+  write(*,nml=table1)
+  write(*,nml=phy_param)
+  stop
+
 	!Read succ and fail sets from file.
 	if (printing) print*, "Reading files."
 	call read_succ(success, "totalsucc.bin","unformatted")
@@ -99,6 +103,7 @@ program findclusters
       call complement(work, success,insulatedpts)
       deallocate(insulatedpts)
       deallocate(success)
+      allocate(success(size(work,1),size(work,2)))
       success=work
       deallocate(work)
       !Rescale eps. Note: mult two arrays multiplies element-wise, not as a
