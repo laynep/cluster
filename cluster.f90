@@ -423,7 +423,7 @@ subroutine complement(comp, set, subset, tol)
 	real(dp), dimension(:,:), intent(in) :: set
 	real(dp), dimension(:,:), intent(inout) :: subset
 	real(dp), optional, intent(in) :: tol
-	real(dp), dimension(:,:), allocatable, intent(inout) :: comp
+	real(dp), dimension(:,:), allocatable, intent(out) :: comp
 	integer :: i, j, k, counter, start
 	logical :: same
 	logical, dimension(size(set,1)) :: take
@@ -473,12 +473,13 @@ dok:			do k=1,size(subset,2)
 	!$OMP END PARALLEL
 
   !Make the complement array.
-  allocate(comp(count(take),size(set,2)))
+  if (.not. allocated(comp)) allocate(comp(count(take),size(set,2)))
 
 	counter=0
 	do i=1,size(set,1)
 			if (take(i)) then
 			  counter=counter+1
+        if (counter>size(comp,1)) exit
         comp(counter,:)=set(i,:)
 		end if
 	end do
