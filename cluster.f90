@@ -439,7 +439,7 @@ subroutine complement(comp, set, subset, tol)
 		dt=1e-10_dp
 	end if
 
-	!Presort the subset so can use locate later.
+	!Sort the subset so can use locate later.
 	call heapsort(subset)
 
 	!Parallelize
@@ -453,21 +453,21 @@ doi:	do i=1,size(set,1)
     		call locate(subset,set(i,1),start)
         if (start==0) start=1
 doj:		do j=start,size(subset,1)
-	  		same=.false.
-        if (any(set(i,:)-subset(j,:)>dt)) then
-	  				same=.false.
-	  		else
-	  				same=.true.
-	  		end if
-	  		if (same) then
-	  			!Don't take this row for complement.
-	  			take(i)=.false.
-	  			exit doj
-	  		end if
-	  	end do doj
-	  	if (.not. same) then
-	  		take(i)=.true.
-	  	end if
+  	  		same=.false.
+          if (any(abs(set(i,:)-subset(j,:))>dt)) then
+  	  				same=.false.
+  	  		else
+  	  				same=.true.
+  	  		end if
+  	  		if (same) then
+  	  			!Don't take this row for complement.
+  	  			take(i)=.false.
+  	  			exit doj
+  	  		end if
+  	  	end do doj
+  	  	if (.not. same) then
+  	  		take(i)=.true.
+  	  	end if
   	end do doi
 
 	!$OMP END DO
@@ -477,7 +477,6 @@ doj:		do j=start,size(subset,1)
   if (count(take)>0) then
     allocate(comp(count(take),size(set,2)))
   else
-    print*, "No points in complement."
     return
   end if
 

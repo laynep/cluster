@@ -5,10 +5,11 @@
 
 !Options:  
 !1.   If we want to print to stdout specify printing=.true.
+!2.
 !3.   If we want to shuffle the success and fail sets and do a run, then
 !shuffling=.true.
 !4.   If we want to find clusters based off of eps~H, ie the approximate size of
-!a quantum fluctuation, then find_min=.true.
+!a quantum fluctuation only, then find_min=.true.
 !5.   If we want to go from a large eps to a smaller eps, at each stage removing
 !the previously found elements from the set, then reduce=.true.
 
@@ -86,8 +87,11 @@ program findclusters
     !How much to scale every step by
     allocate(scaling(size(eps)))
     scaling=(eps-(energy_scale**2)/mplanck)/(dble(kend)-1_dp)
- 		dencrit=1	!No other points required in eps-ball.
-  	do k=kend,1,-1
+    !No other points required in eps-ball.
+		dencrit=1
+    !Loop from largest to smallest ball, removing the chosen points at each
+    !step.
+    do k=kend,1,-1
    		if (printing) print*, "Epsilon is", eps
    		call get_insulatedcorepts(insulatedpts,success,fail,&
   			&euclidean,eps,dencrit)
@@ -100,11 +104,13 @@ program findclusters
       if (allocated(insulatedpts)) then
         call complement(work, success,insulatedpts)
         if(.not. allocated(work)) then
-          stop
+          if (printing) print*,"Insulatedpts array is unallocated.  All points in a cluster."
+          if(allocated(insulatedpts)) deallocate(insulatedpts)
+          exit
         end if
         if(allocated(insulatedpts)) deallocate(insulatedpts)
         if(allocated(success)) deallocate(success)
-        allocate(success(size(work,1),size(work,2)))
+!        allocate(success(size(work,1),size(work,2)))
         success=work
         if(allocated(work)) deallocate(work)
       end if
