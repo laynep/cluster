@@ -441,8 +441,8 @@ subroutine complement(comp, set, subset, tol)
 	!Parallelize
 
 	!$OMP PARALLEL &
-	!$OMP& SHARED(set,subset,take)&
-	!$OMP& PRIVATE(same)
+	!$OMP& SHARED(set,subset,take,dt)&
+	!$OMP& PRIVATE(same,j,k,start)
 	!$OMP DO 
 
 doi:	do i=1,size(set,1)
