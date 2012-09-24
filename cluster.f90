@@ -34,7 +34,7 @@ subroutine get_insulatedcorepts(core,succ,fail,metric,sizeneighb,dencrit)
 	end interface
 	real(dp), dimension(:), intent(in), optional :: sizeneighb
 	integer, intent(in), optional :: dencrit
-	real(dp), dimension(:,:), allocatable :: core
+	real(dp), dimension(:,:), allocatable, intent(out) :: core
 	logical, dimension(size(succ,1)) :: good
 	integer :: i, length, cnt, density
 	real(dp), dimension(size(succ,2)) :: eps
@@ -123,7 +123,7 @@ subroutine Neps(output, setA, setB, eps, metric, failstop)
 			real(dp) :: metric
 		end function metric
 	end interface
-	integer, dimension(size(seta,1)) :: output
+	integer, dimension(size(seta,1)), intent(out) :: output
 	integer :: i
   logical, intent(in), optional :: failstop
 
@@ -155,7 +155,6 @@ integer function eps_neigh(pt, set, eps, metric, failstop)
 		  use types, only : dp
     	implicit none
 			real(dp), dimension(:), intent(in) :: pt1, pt2
-      !Get the corepoints at the minimum value for epsilong.
 			real(dp) :: metric
 		end function metric
 	end interface
@@ -290,7 +289,7 @@ subroutine read_succ(success, fname, formt)
   use features, only : newunit
 	implicit none
 
-	real(dp), dimension(:,:), intent(inout) :: success
+	real(dp), dimension(:,:), intent(out) :: success
 	character(len=*), intent(in) :: fname
 	character(len=*), optional, intent(in) :: formt
 	integer :: check, i, j, u
@@ -305,7 +304,7 @@ subroutine read_succ(success, fname, formt)
 	if (present(formt)) then
 		open(unit=newunit(u),status='old',file=fname,form=formt)
 	else
-		open(unit=newunit(u),status='old',file=fname)
+		open(unit=newunit(u),status='old',file=fname,form='unformatted')
 	end if
 
 	check = 0
@@ -331,7 +330,7 @@ subroutine read_fail(fail, fname, formt)
   use features, only : newunit
 	implicit none
 
-	real(dp), dimension(:,:), intent(inout) :: fail
+	real(dp), dimension(:,:), intent(out) :: fail
 	character(len=*), intent(in) :: fname
 	character(len=*), optional, intent(in) :: formt
 	integer :: check, i, j, u
@@ -393,7 +392,7 @@ subroutine print_corepoints(success, insulatedpts, printing,eps,k)
   logical, intent(in) :: printing
   real(dp), dimension(:), intent(in) :: eps
   integer, intent(in), optional :: k
-  real(dp), dimension(:,:), intent(inout) :: insulatedpts, success
+  real(dp), dimension(:,:), intent(in) :: insulatedpts, success
   integer :: u, i, j, kk
 	character(len=18) :: corename
   real :: ratio
@@ -421,7 +420,7 @@ end subroutine print_corepoints
 
 !A function that removes a subset from a set.  Copies the original
 !set, which makes this pretty memory intensive for large arrays.
-pure subroutine complement(comp, set, subset, tol)
+subroutine complement(comp, set, subset, tol)
 	use sorters, only : heapsort, locate
 	implicit none
 
@@ -443,12 +442,12 @@ pure subroutine complement(comp, set, subset, tol)
 	!Presort the subset so can use locate later.
 	call heapsort(subset)
 
-!	!Parallelize
-!
-!	!$OMP PARALLEL &
-!	!$OMP& SHARED(set,subset,take,dt)&
-!	!$OMP& PRIVATE(same,j,k,start)
-!	!$OMP DO SCHEDULE(STATIC)
+	!Parallelize
+
+	!$OMP PARALLEL &
+	!$OMP& SHARED(set,subset,take,dt)&
+	!$OMP& PRIVATE(same,j,k,start)
+	!$OMP DO SCHEDULE(STATIC)
 
 doi:	do i=1,size(set,1)
     		call locate(subset,set(i,1),start)
@@ -471,14 +470,14 @@ doj:		do j=start,size(subset,1)
 	  	end if
   	end do doi
 
-!	!$OMP END DO
-!	!$OMP END PARALLEL
+	!$OMP END DO
+	!$OMP END PARALLEL
 
   !Make the complement array.
   if (count(take)>0) then
     allocate(comp(count(take),size(set,2)))
   else
-!    print*, "No points in complement."
+    print*, "No points in complement."
     return
   end if
 
