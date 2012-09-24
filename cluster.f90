@@ -408,10 +408,13 @@ subroutine print_corepoints(success, insulatedpts, printing,eps,k)
 	write(corename,'(a,i4.4,a)')'corepoints',(kk+1),".bin"
 	!Open file.
 	open(unit=newunit(u),file=corename,form='unformatted')
-	do i=1,size(insulatedpts,1)
-		write(unit=u), (insulatedpts(i,j),j=1,size(insulatedpts,2))
-	end do
-	close(unit=u)		
+write(unit=u), size(insulatedpts,1)
+  if (size(insulatedpts,1)>0) then
+  	do i=1,size(insulatedpts,1)
+  		write(unit=u), (insulatedpts(i,j),j=1,size(insulatedpts,2))
+  	end do
+  end if
+  close(unit=u)		
 	!Ratio of points in cluster to points in success.
   ratio=real(size(insulatedpts))/real(size(success))
 	if (printing) print*,ratio, "Percent of total are core points"
