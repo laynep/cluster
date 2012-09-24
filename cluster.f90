@@ -105,8 +105,6 @@ function goodpts(succ,fail,eps,dencrit,metric)
 
 end function goodpts
 
-
-
 !Function which takes two sets, setA and setB, and returns the vector Neps that is the number of points in the epsilon-neighborhood of each element in setA with respect to setB.  Also has an optional input "failstop" that will stop the counting of nearby points at one.  We can then use this when comparing against the fail set: if there's one or more points adjacent to a successful point, we can stop counting and discard that point from the protected cluster.
 subroutine Neps(output, setA, setB, eps, metric, failstop)
 	use omp_lib
@@ -217,8 +215,6 @@ pure subroutine set_eps(succ,eps,n)
 
 end subroutine set_eps
 
-
-
 !*******************************************************
 !FUNCTION which will search using bisection a table table(n,m)  which has been previously ordered by its first column.  Given a value X it will return the value J such that X is between table(J,1) and table(J+1,1).  J=0 or J=SIZE(table,1) if X is out of range.
 
@@ -284,7 +280,6 @@ pure real(dp) function dist_n(pt1,pt2,n)
 end function dist_n
 
 !********************************************************
-
 
 
 !Subroutine that reads the success set.

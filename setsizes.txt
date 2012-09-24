@@ -1,6 +1,6 @@
 &tablel
-	length_s=250000, !Dimens for sample
-	length_f=326683, 
+	length_s=25000, !Dimens for sample
+	length_f=32668, 
 	width_s=4, 
 	width_f=4,
 	printing=.true., !Want to print to stdout?
