@@ -15,7 +15,6 @@
 
 module fcluster
   use types, only : dp
-  use features, only : newunit
   implicit none
 
 contains
@@ -288,6 +287,7 @@ end function dist_n
 
 !Subroutine that reads the success set.
 subroutine read_succ(success, fname, formt)
+  use features, only : newunit
 	implicit none
 
 	real(dp), dimension(:,:), intent(inout) :: success
@@ -328,6 +328,7 @@ end subroutine read_succ
 
 !Subroutine that reads the fail set.
 subroutine read_fail(fail, fname, formt)
+  use features, only : newunit
 	implicit none
 
 	real(dp), dimension(:,:), intent(inout) :: fail
@@ -383,9 +384,10 @@ subroutine noise(set, mnm, maxm)
 
 end subroutine noise
 
-!A subroutine that prints the corepoints and deallocates the insulatedpoints
+!A subroutine that prints the corepoints the insulatedpoints
 !array.
 subroutine print_corepoints(success, insulatedpts, printing,eps,k)
+  use features, only : newunit
   implicit none
 
   logical, intent(in) :: printing
@@ -453,14 +455,11 @@ doi:	do i=1,size(set,1)
         if (start==0) start=1
 doj:		do j=start,size(subset,1)
 	  		same=.false.
-dok:			do k=1,size(subset,2)
-	  			if (abs(set(i,k)-subset(j,k))<dt) then
-	  				same=.true.
-	  			else
+        if (any(set(i,:)-subset(j,:)>dt)) then
 	  				same=.false.
-	  				exit dok
-	  			end if
-	  		end do dok	
+	  		else
+	  				same=.true.
+	  		end if
 	  		if (same) then
 	  			!Don't take this row for complement.
 	  			take(i)=.false.
@@ -476,7 +475,12 @@ dok:			do k=1,size(subset,2)
 	!$OMP END PARALLEL
 
   !Make the complement array.
-  if (.not. allocated(comp)) allocate(comp(count(take),size(set,2)))
+  if (count(take)>0) then
+    allocate(comp(count(take),size(set,2)))
+  else
+    print*, "No points in complement."
+    return
+  end if
 
 	counter=0
 	do i=1,size(set,1)

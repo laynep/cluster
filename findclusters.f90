@@ -97,14 +97,16 @@ program findclusters
       if (printing) print*, "Taking complement of success set."
       if (allocated(insulatedpts)) then
         call complement(work, success,insulatedpts)
-        deallocate(insulatedpts)
-        deallocate(success)
+        if(.not. allocated(work)) then
+          stop
+        end if
+        if(allocated(insulatedpts)) deallocate(insulatedpts)
+        if(allocated(success)) deallocate(success)
         allocate(success(size(work,1),size(work,2)))
         success=work
-        deallocate(work)
+        if(allocated(work)) deallocate(work)
       end if
-      !Rescale eps. Note: mult two arrays multiplies element-wise, not as a
-      !matrix product.
+      !Shrink eps.
       eps=eps-scaling
       if (printing) print*,"---------------------"
   	end do
