@@ -76,7 +76,7 @@ program findclusters
   			&euclidean,eps,dencrit)
     call print_corepoints(success, insulatedpts, printing,eps)
     deallocate(insulatedpts)
- else
+  else
     !Find clusters in a top-down approach: start with very large clusters, then
     !remove these progressively from the data set until we reach the smallest
     !possible eps~H.
@@ -91,7 +91,9 @@ program findclusters
    		if (printing) print*, "Epsilon is", eps
    		call get_insulatedcorepts(insulatedpts,success,fail,&
   			&euclidean,eps,dencrit)
-      call print_corepoints(success, insulatedpts, printing,eps,k)
+      if (allocated(insulatedpts)) then
+        call print_corepoints(success, insulatedpts, printing,eps,k)
+      end if
       !Remove the corepoints from success set.  Removes points that are within
       !1e-10 of a point in the insulatedpts array.
       if (printing) print*, "Taking complement of success set."

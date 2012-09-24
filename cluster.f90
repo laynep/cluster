@@ -421,7 +421,7 @@ end subroutine print_corepoints
 
 !A function that removes a subset from a set.  Copies the original
 !set, which makes this pretty memory intensive for large arrays.
-subroutine complement(comp, set, subset, tol)
+pure subroutine complement(comp, set, subset, tol)
 	use sorters, only : heapsort, locate
 	implicit none
 
@@ -443,12 +443,12 @@ subroutine complement(comp, set, subset, tol)
 	!Presort the subset so can use locate later.
 	call heapsort(subset)
 
-	!Parallelize
-
-	!$OMP PARALLEL &
-	!$OMP& SHARED(set,subset,take,dt)&
-	!$OMP& PRIVATE(same,j,k,start)
-	!$OMP DO SCHEDULE(STATIC)
+!	!Parallelize
+!
+!	!$OMP PARALLEL &
+!	!$OMP& SHARED(set,subset,take,dt)&
+!	!$OMP& PRIVATE(same,j,k,start)
+!	!$OMP DO SCHEDULE(STATIC)
 
 doi:	do i=1,size(set,1)
     		call locate(subset,set(i,1),start)
@@ -471,14 +471,14 @@ doj:		do j=start,size(subset,1)
 	  	end if
   	end do doi
 
-	!$OMP END DO
-	!$OMP END PARALLEL
+!	!$OMP END DO
+!	!$OMP END PARALLEL
 
   !Make the complement array.
   if (count(take)>0) then
     allocate(comp(count(take),size(set,2)))
   else
-    print*, "No points in complement."
+!    print*, "No points in complement."
     return
   end if
 
