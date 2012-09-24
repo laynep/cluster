@@ -5,7 +5,6 @@
 
 !Options:  
 !1.   If we want to print to stdout specify printing=.true.
-!2.   If we want to auto calculate the size of the epsilon ball, auto=.true.
 !3.   If we want to shuffle the success and fail sets and do a run, then
 !shuffling=.true.
 !4.   If we want to find clusters based off of eps~H, ie the approximate size of
@@ -27,12 +26,12 @@ program findclusters
 	real(dp), dimension(:,:), allocatable :: insulatedpts
 	real(dp), dimension(:), allocatable :: eps, scaling
 	integer :: dencrit, u
-	logical :: printing, auto, shuffling, find_min, reduce
+	logical :: printing, shuffling, find_min, reduce
 	real :: ratio
   real(dp) :: energy_scale, mplanck
 
 	namelist /tablel/ length_s, length_f, width_s, width_f, printing, &
-      &auto, shuffling, find_min, reduce
+      &shuffling, find_min, reduce
   namelist /phy_param/ energy_scale, mplanck
 
 	!Reads file sizes from input file "setsizes.txt".
@@ -41,10 +40,6 @@ program findclusters
   read(unit=u, nml=phy_param)
 	close(unit=u)
 	allocate(success(length_s,width_s),fail(length_f,width_f))
-
-  write(*,nml=table1)
-  write(*,nml=phy_param)
-  stop
 
 	!Read succ and fail sets from file.
 	if (printing) print*, "Reading files."
@@ -82,12 +77,12 @@ program findclusters
     call print_corepoints(success, insulatedpts, printing,eps)
     deallocate(insulatedpts)
  else
-   !Find clusters in a top-down approach: start with very large clusters, then
-   !remove these progressively from the data set until we reach the smallest
-   !possible eps~H.
+    !Find clusters in a top-down approach: start with very large clusters, then
+    !remove these progressively from the data set until we reach the smallest
+    !possible eps~H.
 
-   !Auto set eps to n times avg spatial distance.
-   call set_eps(success,eps,(100*kend+1))
+    !Auto set eps to n times avg spatial distance.
+    call set_eps(success,eps,(100*kend+1))
     !How much to scale every step by
     allocate(scaling(size(eps)))
     scaling=(eps-(energy_scale**2)/mplanck)/(dble(kend)-1_dp)
