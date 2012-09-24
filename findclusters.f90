@@ -96,7 +96,7 @@ program findclusters
       !Remove the corepoints from success set.  Removes points that are within
       !1e-10 of a point in the insulatedpts array.
       if (printing) print*, "Taking complement of success set."
-      work=complement(success,insulatedpts)
+      call complement(work, success,insulatedpts)
       deallocate(insulatedpts)
       deallocate(success)
       success=work

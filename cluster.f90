@@ -416,14 +416,14 @@ end subroutine print_corepoints
 
 !A function that removes a subset from a set.  Copies the original
 !set, which makes this pretty memory intensive for large arrays.
-function complement(set, subset, tol)
+subroutine complement(comp, set, subset, tol)
 	use sorters, only : heapsort, locate
 	implicit none
 
 	real(dp), dimension(:,:), intent(in) :: set
 	real(dp), dimension(:,:), intent(inout) :: subset
 	real(dp), optional, intent(in) :: tol
-	real(dp), dimension(:,:), allocatable :: complement
+	real(dp), dimension(:,:), allocatable, intent(inout) :: comp
 	integer :: i, j, k, counter, start
 	logical :: same
 	logical, dimension(size(set,1)) :: take
@@ -473,17 +473,17 @@ dok:			do k=1,size(subset,2)
 	!$OMP END PARALLEL
 
   !Make the complement array.
-  allocate(complement(count(take),size(set,2)))
+  allocate(comp(count(take),size(set,2)))
 
 	counter=0
 	do i=1,size(set,1)
 			if (take(i)) then
 			  counter=counter+1
-        complement(counter,:)=set(i,:)
+        comp(counter,:)=set(i,:)
 		end if
 	end do
 
-end function complement
+end subroutine complement
 
 end module fcluster
 
