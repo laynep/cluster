@@ -441,6 +441,7 @@ subroutine complement(comp, set, subset, tol)
 	end if
 
   take=.false.
+  same=.false.
 
 	!Sort the subset so can use locate later.
 	call heapsort(subset)

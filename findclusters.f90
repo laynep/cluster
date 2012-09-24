@@ -110,9 +110,11 @@ program findclusters
         end if
         if(allocated(insulatedpts)) deallocate(insulatedpts)
         if(allocated(success)) deallocate(success)
-!        allocate(success(size(work,1),size(work,2)))
+        allocate(success(size(work,1),size(work,2)))
         success=work
         if(allocated(work)) deallocate(work)
+print*,(success(i,:),i=1,5)
+if (k<kend-1) stop
       end if
       !Shrink eps.
       eps=eps-scaling
