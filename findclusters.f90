@@ -21,8 +21,8 @@ program findclusters
   use features, only : newunit
   implicit none
 
-	real(dp), dimension(:,:), allocatable :: success, fail, work
-	integer :: i,j,k, kend, check
+	real(dp), dimension(:,:), allocatable :: success, fail
+	integer :: i,j, check, kend
 	integer :: length_s, length_f, width_s, width_f
 	real(dp), dimension(:,:), allocatable :: insulatedpts
 	real(dp), dimension(:), allocatable :: eps, scaling
@@ -63,9 +63,7 @@ program findclusters
 	if (printing) print*,"*********************************"
   !Set eps in each dimn.
 	allocate(eps(size(success,2)))
-	!Set loop end st numb pts in box ~ size(success,1)/20
-	kend=(size(success,1)/100)/20
-
+	
   !Find clusters where eps is set to the minimum size ~ on order of quant fluct.
   if (find_min) then
     !Set eps to order of Hubble parameter, i.e. the size of quantum fluctuations
@@ -82,42 +80,17 @@ program findclusters
     !remove these progressively from the data set until we reach the smallest
     !possible eps~H.
 
+    !Set loop end st numb pts in box ~ size(success,1)/20
+	  kend=(size(success,1)/100)/20
     !Auto set eps to n times avg spatial distance.
     call set_eps(success,eps,(100*kend+1))
+
     !How much to scale every step by
     allocate(scaling(size(eps)))
     scaling=(eps-(energy_scale**2)/mplanck)/(dble(kend)-1_dp)
-    !No other points required in eps-ball.
-		dencrit=1
     !Loop from largest to smallest ball, removing the chosen points at each
     !step.
-    do k=kend,1,-1
-   		if (printing) print*, "Epsilon is", eps
-   		call get_insulatedcorepts(insulatedpts,success,fail,&
-  			&euclidean,eps,dencrit)
-      if (allocated(insulatedpts)) then
-        call print_corepoints(success, insulatedpts, printing,eps,k)
-      end if
-      !Remove the corepoints from success set.  Removes points that are within
-      !1e-10 of a point in the insulatedpts array.
-      if (printing) print*, "Taking complement of success set."
-      if (allocated(insulatedpts)) then
-        call complement(work, success,insulatedpts)
-        if(.not. allocated(work)) then
-          if (printing) print*,"Insulatedpts array is unallocated.  All points in a cluster."
-          if(allocated(insulatedpts)) deallocate(insulatedpts)
-          exit
-        end if
-        if(allocated(insulatedpts)) deallocate(insulatedpts)
-        if(allocated(success)) deallocate(success)
-        allocate(success(size(work,1),size(work,2)))
-        success=work
-        if(allocated(work)) deallocate(work)
-      end if
-      !Shrink eps.
-      eps=eps-scaling
-      if (printing) print*,"---------------------"
-  	end do
+    call cluster_reduce(success, fail, eps, printing, scaling, kend)
   end if
 
 	if(allocated(eps)) deallocate(eps)

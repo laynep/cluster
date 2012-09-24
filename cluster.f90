@@ -403,22 +403,21 @@ subroutine print_corepoints(success, insulatedpts, printing,eps,k)
     kk=1
   end if
 
-  if (printing) print*,"Printing core points for eps=",eps
   !Name file.
 	write(corename,'(a,i4.4,a)')'corepoints',(kk+1),".bin"
+  if (printing) print*,"Printing core points to file ",corename
 	!Open file.
 	open(unit=newunit(u),file=corename,form='unformatted')
-write(unit=u), size(insulatedpts,1)
   if (size(insulatedpts,1)>0) then
   	do i=1,size(insulatedpts,1)
   		write(unit=u), (insulatedpts(i,j),j=1,size(insulatedpts,2))
   	end do
+    !Ratio of points in cluster to points in success.
+    ratio=real(size(insulatedpts))/real(size(success))
+	  if (printing) print*,ratio, "Percent of total are core points"
   end if
   close(unit=u)		
-	!Ratio of points in cluster to points in success.
-  ratio=real(size(insulatedpts))/real(size(success))
-	if (printing) print*,ratio, "Percent of total are core points"
-
+	
 end subroutine print_corepoints
 
 !A function that removes a subset from a set.  Copies the original
@@ -436,6 +435,9 @@ subroutine complement(comp, set, subset, tol)
 	logical, dimension(size(set,1)) :: take
 	real(dp) :: dt
 
+  !Check if subset is empty.
+  if (size(subset,1)<1) return
+
   !Initialize.
 	if (present(tol)) then
 		dt=tol
@@ -447,18 +449,18 @@ subroutine complement(comp, set, subset, tol)
   same=.false.
 
 	!Sort the subset so can use locate later.
-	call heapsort(subset)
+  if (size(subset,1)>1) call heapsort(subset)
 
-	!Parallelize
+  !Parallelize if the set has more than 1000 rows.
 
 	!$OMP PARALLEL &
+  !$OMP& IF(size(set,1)>1000) &
 	!$OMP& SHARED(set,subset,take,dt,i)&
 	!$OMP& PRIVATE(same,j,k,start)
 	!$OMP DO SCHEDULE(STATIC)
 
 doi:	do i=1,size(set,1)
         start=location(subset,set(i,1))
-    		!call locate(subset,set(i,1),start)
         if (start==0) start=1
 doj:		do j=start,size(subset,1)
   	  		same=.false.
@@ -496,6 +498,57 @@ doj:		do j=start,size(subset,1)
 	end do
 
 end subroutine complement
+
+!Loops from largest to smallest size epsilon balls, removing the previously
+!found cluster points at each subsequent step.
+subroutine cluster_reduce(success, fail, eps, printing, scaling, kend)
+  implicit none
+
+  real(dp), dimension(:,:), allocatable, intent(inout) :: success, fail
+  real(dp), dimension(:), intent(inout) :: eps, scaling
+  logical, intent(in) :: printing
+  integer, intent(in) :: kend
+  integer :: k, dencrit
+  real(dp), dimension(:,:), allocatable :: insulatedpts, work
+
+  !No other points required in eps-ball.
+  dencrit=1
+
+  do k=kend,1,-1
+ 		if (printing) print*, "Epsilon is", eps
+ 		call get_insulatedcorepts(insulatedpts,success,fail,&
+			&euclidean,eps,dencrit)
+    if (allocated(insulatedpts)) then
+      call print_corepoints(success, insulatedpts, printing,eps,k)
+    else
+      if(printing) print*,"No cluster points, cycling."
+      !Shrink eps.
+      eps=eps-scaling
+      if (printing) print*,"---------------------"
+      cycle
+    end if
+    !Remove the corepoints from success set.  Removes points that are within
+    !1e-10 of a point in the insulatedpts array.
+    if (printing) print*, "Taking complement of success set."
+    if (allocated(insulatedpts)) then
+      call complement(work, success,insulatedpts)
+      if(.not. allocated(work)) then
+        if (printing) print*,"Insulatedpts array is unallocated.  All points in a cluster."
+        if(allocated(insulatedpts)) deallocate(insulatedpts)
+        exit
+      end if
+      if(allocated(insulatedpts)) deallocate(insulatedpts)
+      if(allocated(success)) deallocate(success)
+     allocate(success(size(work,1),size(work,2)))
+      success=work
+      if(allocated(work)) deallocate(work)
+    end if
+    !Shrink eps.
+    eps=eps-scaling
+    if (printing) print*,"---------------------"
+  end do
+
+end subroutine cluster_reduce
 
 end module fcluster
 
