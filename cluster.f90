@@ -398,13 +398,13 @@ subroutine print_corepoints(success, insulatedpts, printing,eps,k)
   real :: ratio
 
   if (present(k)) then
-    kk=k
+    kk=k+1
   else
     kk=1
   end if
 
   !Name file.
-	write(corename,'(a,i4.4,a)')'corepoints',(kk+1),".bin"
+	write(corename,'(a,i4.4,a)')'corepoints',kk,".bin"
   if (printing) print*,"Printing core points to file ",corename
 	!Open file.
 	open(unit=newunit(u),file=corename,form='unformatted')

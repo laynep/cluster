@@ -82,6 +82,7 @@ program findclusters
 
     !Set loop end st numb pts in box ~ size(success,1)/20
 	  kend=(size(success,1)/100)/20
+    if (kend>9999) kend=9999
     !Auto set eps to n times avg spatial distance.
     call set_eps(success,eps,(100*kend+1))
 
