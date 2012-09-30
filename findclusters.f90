@@ -70,7 +70,7 @@ program findclusters
     !in the fields.
     eps=(energy_scale**2)/mplanck
     dencrit=1   !No other nearby points necessary.
-    !Get the corepoints at the minimum value for epsilong.
+    !Get the corepoints at the minimum value for epsilon.
 		call get_insulatedcorepts(insulatedpts,success,fail,&
   			&euclidean,eps,dencrit)
     call print_corepoints(success, insulatedpts, printing,eps)
@@ -82,7 +82,8 @@ program findclusters
 
     !Set loop end st numb pts in box ~ size(success,1)/20
 	  kend=(size(success,1)/100)/20
-    if (kend>9999) kend=9999
+    !Fixes problem with naming format for cluster file.
+    if (kend>9999) kend=9998
     !Auto set eps to n times avg spatial distance.
     call set_eps(success,eps,(100*kend+1))
 
