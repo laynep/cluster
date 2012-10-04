@@ -6,6 +6,7 @@
 	printing=.true., !Want to print to stdout?
 	shuffling=.false.,	 !Compare vs shuffled data set?
   find_min=.false.   !Base eps on quant fluct.
+  find_all=.false.     !Find all clusters, taking complement in loop.
   reduce=.true.   !Go from large to small eps and remove subseq.
 /
 &phy_param

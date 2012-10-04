@@ -27,12 +27,12 @@ program findclusters
 	real(dp), dimension(:,:), allocatable :: insulatedpts
 	real(dp), dimension(:), allocatable :: eps, scaling
 	integer :: dencrit, u
-	logical :: printing, shuffling, find_min, reduce
+	logical :: printing, shuffling, find_min, find_all, reduce
 	real :: ratio
   real(dp) :: energy_scale, mplanck
 
 	namelist /tablel/ length_s, length_f, width_s, width_f, printing, &
-      &shuffling, find_min, reduce
+      &shuffling, find_min, find_all, reduce
   namelist /phy_param/ energy_scale, mplanck
 
 	!Reads file sizes from input file "setsizes.txt".
@@ -75,7 +75,7 @@ program findclusters
   			&euclidean,eps,dencrit)
     call print_corepoints(success, insulatedpts, printing,eps)
     deallocate(insulatedpts)
-  else
+  else if (find_all) then
     !Find clusters in a top-down approach: start with very large clusters, then
     !remove these progressively from the data set until we reach the smallest
     !possible eps~H.
@@ -93,6 +93,19 @@ program findclusters
     !Loop from largest to smallest ball, removing the chosen points at each
     !step.
     call cluster_reduce(success, fail, eps, printing, scaling, kend)
+  else
+    !Find large clusters, which should find only those in the inflationary
+    !valley.  Then look for those at the minimum level that aren't in the large
+    !cluster set.
+
+    !Max size
+    kend=size(success,1)/2000
+    print*,"kend",kend
+    call set_eps(success,eps,(100*kend+1))
+    print*,"eps",eps
+
+    call large_small_reduce(success, fail, eps, printing, kend, energy_scale,&
+    & mplanck)
   end if
 
 	if(allocated(eps)) deallocate(eps)

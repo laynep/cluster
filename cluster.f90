@@ -550,5 +550,61 @@ subroutine cluster_reduce(success, fail, eps, printing, scaling, kend)
 
 end subroutine cluster_reduce
 
+!Largest and smallest size epsilon balls, removing the previously
+!found cluster points.
+subroutine large_small_reduce(success, fail, eps, printing, kend, en, mpl)
+  implicit none
+
+  real(dp), dimension(:,:), allocatable, intent(inout) :: success, fail
+  real(dp), dimension(:), intent(inout) :: eps
+  logical, intent(in) :: printing
+  integer, intent(in) :: kend
+  integer :: dencrit
+  real(dp), dimension(:,:), allocatable :: insulatedpts, work
+  real(dp), intent(in) :: en, mpl
+
+  !No other points required in eps-ball.
+  dencrit=1
+
+ 	if (printing) print*, "Epsilon is", eps
+ 	call get_insulatedcorepts(insulatedpts,success,fail,&
+		&euclidean,eps,dencrit)
+  if (allocated(insulatedpts)) then
+    call print_corepoints(success, insulatedpts, printing,eps,1)
+  else
+    if(printing) print*,"No large cluster points."
+    if (printing) print*,"---------------------"
+  end if
+  !Remove the corepoints from success set.  Removes points that are within
+  !1e-10 of a point in the insulatedpts array.
+  if (printing) print*, "Taking complement of success set."
+  if (allocated(insulatedpts)) then
+    call complement(work, success,insulatedpts)
+    if(.not. allocated(work)) then
+      if (printing) print*,"Insulatedpts array is unallocated.  All points in a large cluster."
+      stop
+      if(allocated(insulatedpts)) deallocate(insulatedpts)
+    end if
+    if(allocated(insulatedpts)) deallocate(insulatedpts)
+    if(allocated(success)) deallocate(success)
+   allocate(success(size(work,1),size(work,2)))
+    success=work
+    if(allocated(work)) deallocate(work)
+  end if
+  if (printing) print*,"---------------------"
+  !Move to smallest eps size.
+  !Set eps to order of Hubble parameter, i.e. the size of quantum fluctuations
+  !in the fields.
+  eps=(en**2)/mpl
+ 	if (printing) print*, "Epsilon is", eps
+  !Get the corepoints at the minimum value for epsilon.
+	call get_insulatedcorepts(insulatedpts,success,fail,&
+			&euclidean,eps,dencrit)
+  call print_corepoints(success, insulatedpts, printing,eps)
+  deallocate(insulatedpts)
+
+
+end subroutine large_small_reduce
+
 end module fcluster
 
