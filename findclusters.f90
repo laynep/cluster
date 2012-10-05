@@ -1,16 +1,19 @@
+!*************************************************************
+!Layne Price, University of Auckland, 3/9/2012
+!*************************************************************
+
 !This is a program that will find clusters in a data set that is loaded into the
-!file totalsucc.bin.  The clusters will be referenced against how closely they
+!file totalsucc.bin.  The points will be referenced against how closely they
 !cluster and how close they are to elements of the fail set contained in
 !totalfail.bin.
 
-!Options:  
+!Options specified via namelist in setsizes.txt:
 !1.   If we want to print to stdout specify printing=.true.
-!2.
-!3.   If we want to shuffle the success and fail sets and do a run, then
+!2.   If we want to shuffle the success and fail sets and do a run, then
 !shuffling=.true.
-!4.   If we want to find clusters based off of eps~H, ie the approximate size of
+!3.   If we want to find clusters based off of eps~H, ie the approximate size of
 !a quantum fluctuation only, then find_min=.true.
-!5.   If we want to go from a large eps to a smaller eps, at each stage removing
+!4.   If we want to go from a large eps to a smaller eps, at each stage removing
 !the previously found elements from the set, then reduce=.true.
 
 program findclusters
