@@ -30,7 +30,7 @@ program findclusters
 	real(dp), dimension(:,:), allocatable :: insulatedpts
 	real(dp), dimension(:), allocatable :: eps, scaling
 	integer :: dencrit, u
-	logical :: printing, shuffling, find_min, find_all, reduce
+	logical :: printing, shuffling, find_min, find_all, reduce, trimming
 	real :: ratio
   real(dp) :: energy_scale, mplanck
 
@@ -43,6 +43,13 @@ program findclusters
 	read(unit=u, nml=tablel)
   read(unit=u, nml=phy_param)
 	close(unit=u)
+
+  !If the data set is too big, we can trim it manually here.
+  trimming = .true.
+  if (trimming) then
+    length_s=length_s/2
+    length_f=length_f/2
+  end if
 	allocate(success(length_s,width_s),fail(length_f,width_f))
 
 	!Read succ and fail sets from file.
@@ -116,4 +123,3 @@ program findclusters
 	if(allocated(fail)) deallocate(fail)
 
 end program findclusters
-
