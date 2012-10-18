@@ -45,7 +45,7 @@ program findclusters
 	close(unit=u)
 
   !If the data set is too big, we can trim it manually here.
-  trimming = .true.
+  trimming = .false.
   if (trimming) then
     length_s=length_s/2
     length_f=length_f/2
